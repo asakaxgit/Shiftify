@@ -1,0 +1,33 @@
+{
+  "name": "shiftify",
+  "version": "0.1.0",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "export": "tsx src/cli/export.ts",
+    "import": "tsx src/cli/import.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint ./src ./tests",
+    "format": "biome format ./src ./tests --write",
+    "check": "biome check ./src ./tests",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "dotenv": "^16.3.1",
+    "fs-extra": "^11.2.0",
+    "minimist": "^1.2.8",
+    "p-limit": "^6.1.0",
+    "winston": "^3.18.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^2.0.0"
+  }
+}
