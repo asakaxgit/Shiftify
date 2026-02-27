@@ -7,25 +7,25 @@ const PLAN_BUCKETS = {
   standard: { maximum: 1000, restoreRate: 50 },
 } as const
 
-interface ThrottleStatus {
+type ThrottleStatus = {
   maximumAvailable: number
   currentlyAvailable: number
   restoreRate: number
 }
 
-interface QueryCost {
+type QueryCost = {
   requestedQueryCost: number
   actualQueryCost: number | null
   throttleStatus: ThrottleStatus
 }
 
-interface GraphQLResponse<T = unknown> {
+type GraphQLResponse<T = unknown> = {
   data?: T
   errors?: Array<{ message: string; locations?: unknown[]; path?: unknown[] }>
   extensions?: { cost?: QueryCost }
 }
 
-interface BucketState {
+export interface BucketState {
   available: number
   maximum: number
   restoreRate: number
@@ -35,13 +35,13 @@ interface BucketState {
 // Per-shop bucket state shared across calls
 const buckets = new Map<string, BucketState>()
 
-function getToken(shop: string): string {
+const getToken = (shop: string): string => {
   if (shop === config.PROD_SHOP) return config.PROD_ACCESS_TOKEN
   if (shop === config.DEV_SHOP) return config.DEV_ACCESS_TOKEN
   throw new Error(`Unknown shop: ${shop}`)
 }
 
-function getBucket(shop: string): BucketState {
+const getBucket = (shop: string): BucketState => {
   let bucket = buckets.get(shop)
   if (!bucket) {
     const plan = config.SHOPIFY_PLAN === 'plus' ? 'plus' : 'standard'
@@ -57,14 +57,12 @@ function getBucket(shop: string): BucketState {
   return bucket
 }
 
-function projectAvailable(bucket: BucketState): number {
+export const projectAvailable = (bucket: BucketState): number => {
   const elapsedSec = (Date.now() - bucket.updatedAt) / 1000
   return Math.min(bucket.maximum, bucket.available + elapsedSec * bucket.restoreRate)
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 
 const MAX_RETRIES = 3
 // Wait if bucket is projected below this fraction of max before sending

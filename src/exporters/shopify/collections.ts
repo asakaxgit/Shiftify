@@ -45,14 +45,14 @@ const MANUAL_PRODUCTS_QUERY = /* GraphQL */ `
   }
 `
 
-interface CollectionsPage {
+type CollectionsPage = {
   collections: {
     pageInfo: { hasNextPage: boolean; endCursor: string | null }
     nodes: Collection[]
   }
 }
 
-interface ManualProductsPage {
+type ManualProductsPage = {
   collection: {
     products: {
       pageInfo: { hasNextPage: boolean; endCursor: string | null }
@@ -61,7 +61,7 @@ interface ManualProductsPage {
   } | null
 }
 
-async function fetchManualProductHandles(shop: string, collectionId: string): Promise<string[]> {
+const fetchManualProductHandles = async (shop: string, collectionId: string): Promise<string[]> => {
   const handles: string[] = []
   let cursor: string | undefined
 
@@ -80,7 +80,7 @@ async function fetchManualProductHandles(shop: string, collectionId: string): Pr
   return handles
 }
 
-export async function exportCollections(): Promise<void> {
+export const exportCollections = async (): Promise<void> => {
   logger.info('Exporting collections...')
   const shop = config.PROD_SHOP
   const all: Collection[] = []

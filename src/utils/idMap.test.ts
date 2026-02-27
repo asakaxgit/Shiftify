@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { idMap } from '../src/utils/idMap'
+import { idMap } from './idMap'
 
 describe('idMap', () => {
   it('loads empty map', () => {

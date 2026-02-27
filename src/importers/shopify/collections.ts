@@ -32,27 +32,27 @@ const ADD_PRODUCTS_MUTATION = /* GraphQL */ `
   }
 `
 
-interface CreateResult {
+type CreateResult = {
   collectionCreate: {
     collection: { id: string; handle: string } | null
     userErrors: Array<{ field: string[]; message: string }>
   }
 }
 
-interface AddProductsResult {
+type AddProductsResult = {
   collectionAddProducts: {
     collection: { id: string } | null
     userErrors: Array<{ field: string[]; message: string }>
   }
 }
 
-function chunk<T>(arr: T[], size: number): T[][] {
+const chunk = <T>(arr: T[], size: number): T[][] => {
   const out: T[][] = []
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
   return out
 }
 
-async function addProducts(shop: string, collectionId: string, productIds: string[]): Promise<void> {
+const addProducts = async (shop: string, collectionId: string, productIds: string[]): Promise<void> => {
   for (const batch of chunk(productIds, 250)) {
     const result = await shopifyClient.graphql<AddProductsResult>(shop, ADD_PRODUCTS_MUTATION, {
       id: collectionId,
@@ -66,7 +66,7 @@ async function addProducts(shop: string, collectionId: string, productIds: strin
   }
 }
 
-export async function importCollections(): Promise<void> {
+export const importCollections = async (): Promise<void> => {
   const shop = config.DEV_SHOP
   const dataPath = path.join(config.DATA_DIR, 'collections.json')
   const mapPath = path.join(config.MAPS_DIR, 'product-id-map.json')

@@ -7,7 +7,7 @@ type Entity = 'products' | 'collections'
 const VALID_ENTITIES: readonly Entity[] = ['products', 'collections']
 const VALID_SET = new Set<string>(VALID_ENTITIES)
 
-function parseArgs(): Entity[] {
+const parseArgs = (): Entity[] => {
   const argv = minimist(process.argv.slice(2))
   const raw: string | string[] = argv.only ?? argv.o ?? []
   const requested = [raw].flat().filter(Boolean)
@@ -20,7 +20,7 @@ function parseArgs(): Entity[] {
   return requested.filter((e): e is Entity => VALID_SET.has(e))
 }
 
-async function main() {
+const main = async () => {
   const entities = parseArgs()
   logger.info(`Importing: ${entities.join(', ')}`)
 

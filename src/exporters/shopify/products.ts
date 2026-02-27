@@ -55,14 +55,14 @@ const QUERY = /* GraphQL */ `
   }
 `
 
-interface Page {
+type Page = {
   products: {
     pageInfo: { hasNextPage: boolean; endCursor: string | null }
     nodes: Product[]
   }
 }
 
-export async function exportProducts(): Promise<void> {
+export const exportProducts = async (): Promise<void> => {
   logger.info('Exporting products...')
   const shop = config.PROD_SHOP
   const all: Product[] = []

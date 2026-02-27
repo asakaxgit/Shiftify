@@ -21,14 +21,14 @@ const CREATE_MUTATION = /* GraphQL */ `
   }
 `
 
-interface CreateResult {
+type CreateResult = {
   productCreate: {
     product: { id: string; handle: string } | null
     userErrors: Array<{ field: string[]; message: string }>
   }
 }
 
-function buildVariantInput(variant: ProductVariant, productOptions: ProductOption[]) {
+export const buildVariantInput = (variant: ProductVariant, productOptions: ProductOption[]) => {
   // Map selectedOptions to ordered values matching the product's option list
   const options = productOptions.map(opt => {
     const match = variant.selectedOptions.find(s => s.name === opt.name)
@@ -48,7 +48,7 @@ function buildVariantInput(variant: ProductVariant, productOptions: ProductOptio
   }
 }
 
-function buildProductInput(product: Product) {
+const buildProductInput = (product: Product) => {
   return {
     title: product.title,
     handle: product.handle,
@@ -66,7 +66,7 @@ function buildProductInput(product: Product) {
   }
 }
 
-export async function importProducts(): Promise<void> {
+export const importProducts = async (): Promise<void> => {
   const shop = config.DEV_SHOP
   const dataPath = path.join(config.DATA_DIR, 'products.json')
   const products: Product[] = await readJson(dataPath)

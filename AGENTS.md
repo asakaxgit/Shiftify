@@ -50,7 +50,9 @@ tests/          # vitest unit tests
 - **ESM only** — all imports use `.js` extensions (e.g. `'./config.js'`)
 - **Single quotes, no semicolons, 2-space indent, 100-char line width** (Biome)
 - **No build step** — `tsx` executes TypeScript directly; `tsc --noEmit` is type-check only
-- **No top-level await** — async logic lives inside `async function main()`
+- **Arrow functions only** — never use `function` declarations; use `const foo = () =>` everywhere (including exports and async functions)
+- **No top-level await** — async logic lives inside `const main = async () =>`
+- **`type` over `interface`** — always use `type Foo = { ... }`, never `interface Foo { ... }`
 - **No type casts** — `value as SomeType` and `value!` are banned (`noExplicitAny` + `noNonNullAssertion` in Biome); `as const` is fine
 - **Strict TypeScript** — `strict: true`; use type predicates (`(x): x is T =>`) instead of casts
 - **GraphQL strings** tagged with `/* GraphQL */` comment for tooling support

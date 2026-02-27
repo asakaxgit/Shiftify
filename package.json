@@ -7,9 +7,9 @@
     "export": "tsx src/cli/export.ts",
     "import": "tsx src/cli/import.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "biome lint ./src ./tests",
-    "format": "biome format ./src ./tests --write",
-    "check": "biome check ./src ./tests",
+    "lint": "biome lint ./src",
+    "format": "biome format ./src --write",
+    "check": "biome check ./src",
     "test": "vitest run",
     "test:watch": "vitest"
   },
