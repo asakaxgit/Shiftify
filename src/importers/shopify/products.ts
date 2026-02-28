@@ -1,54 +1,32 @@
+import path from 'node:path'
 import { outputJson, readJson } from 'fs-extra'
 import pLimit from 'p-limit'
-import path from 'node:path'
-import type { Product, ProductOption, ProductVariant } from '../../types/shopify.js'
-import { config } from '../../utils/config.js'
-import { logger } from '../../utils/logger.js'
-import { shopifyClient } from '../../utils/shopifyClient.js'
+import { ProductSetDocument, type ProductSetInput, type WeightUnit } from '../../gql/graphql'
+import type { Product, ProductVariant } from '../../types/shopify'
+import { config } from '../../utils/config'
+import { logger } from '../../utils/logger'
+import { shopifyClient } from '../../utils/shopifyClient'
 
-const CREATE_MUTATION = /* GraphQL */ `
-  mutation ProductCreate($input: ProductInput!) {
-    productCreate(input: $input) {
-      product {
-        id
-        handle
-      }
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-`
-
-type CreateResult = {
-  productCreate: {
-    product: { id: string; handle: string } | null
-    userErrors: Array<{ field: string[]; message: string }>
-  }
-}
-
-export const buildVariantInput = (variant: ProductVariant, productOptions: ProductOption[]) => {
-  // Map selectedOptions to ordered values matching the product's option list
-  const options = productOptions.map(opt => {
-    const match = variant.selectedOptions.find(s => s.name === opt.name)
-    return match?.value ?? ''
-  })
+export const buildVariantInput = (variant: ProductVariant) => {
+  const weight = variant.inventoryItem.measurement?.weight
   return {
     sku: variant.sku ?? undefined,
     barcode: variant.barcode ?? undefined,
     price: variant.price,
     compareAtPrice: variant.compareAtPrice ?? undefined,
-    weight: variant.weight,
-    weightUnit: variant.weightUnit,
     inventoryPolicy: variant.inventoryPolicy,
-    inventoryManagement: variant.inventoryItem.tracked ? 'SHOPIFY' : 'NOT_MANAGED',
-    options,
+    inventoryItem: {
+      tracked: variant.inventoryItem.tracked,
+      ...(weight
+        ? { measurement: { weight: { value: weight.value, unit: weight.unit as WeightUnit } } }
+        : {}),
+    },
+    optionValues: variant.selectedOptions.map((o) => ({ optionName: o.name, name: o.value })),
     position: variant.position,
   }
 }
 
-const buildProductInput = (product: Product) => {
+const buildProductInput = (product: Product): ProductSetInput => {
   return {
     title: product.title,
     handle: product.handle,
@@ -57,13 +35,12 @@ const buildProductInput = (product: Product) => {
     vendor: product.vendor,
     status: product.status,
     tags: product.tags,
-    options: product.options.map(o => o.name),
-    variants: product.variants.nodes.map(v => buildVariantInput(v, product.options)),
-    images: product.images.nodes.map(img => ({
-      src: img.url,
-      altText: img.altText ?? undefined,
+    productOptions: product.options.map((o) => ({
+      name: o.name,
+      values: o.values.map((v) => ({ name: v })),
     })),
-  }
+    variants: product.variants.nodes.map((v) => buildVariantInput(v)),
+  } as unknown as ProductSetInput
 }
 
 export const importProducts = async (): Promise<void> => {
@@ -78,15 +55,19 @@ export const importProducts = async (): Promise<void> => {
   let errors = 0
 
   await Promise.all(
-    products.map(product =>
+    products.map((product) =>
       limit(async () => {
         try {
           const input = buildProductInput(product)
-          const result = await shopifyClient.graphql<CreateResult>(shop, CREATE_MUTATION, { input })
-          const { product: created, userErrors } = result.productCreate
+          const result = await shopifyClient.graphql(shop, ProductSetDocument, { input })
+          const set = result.productSet
+          if (!set) return
+          const { product: created, userErrors } = set
 
           if (userErrors.length) {
-            const msg = userErrors.map(e => `${e.field.join('.')}: ${e.message}`).join('; ')
+            const msg = userErrors
+              .map((e) => `${(e.field ?? []).join('.')}: ${e.message}`)
+              .join('; ')
             logger.warn(`  [skip] ${product.handle}: ${msg}`)
             errors++
             return

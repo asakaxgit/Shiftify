@@ -1,0 +1,42 @@
+query ExportCollections($cursor: String) {
+  collections(first: 250, after: $cursor) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      id
+      title
+      handle
+      descriptionHtml
+      sortOrder
+      templateSuffix
+      image {
+        url
+        altText
+      }
+      ruleSet {
+        appliedDisjunctively
+        rules {
+          column
+          relation
+          condition
+        }
+      }
+    }
+  }
+}
+
+query CollectionProducts($id: ID!, $cursor: String) {
+  collection(id: $id) {
+    products(first: 250, after: $cursor) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        handle
+      }
+    }
+  }
+}

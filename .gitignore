@@ -1,4 +1,7 @@
 node_modules
-.env
+.env.*
 data/
 maps/
+*.log
+
+!.env.*.example

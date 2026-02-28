@@ -17,13 +17,27 @@ vi.mock('fs-extra', () => ({ outputJson }))
 import { exportCollections } from './collections'
 
 const smartCol: Collection = {
-  id: 'gid://shopify/Collection/1', title: 'Smart', handle: 'smart', descriptionHtml: '',
-  sortOrder: 'BEST_SELLING', templateSuffix: null, image: null,
-  ruleSet: { appliedDisjunctively: false, rules: [{ column: 'TAG', relation: 'EQUALS', condition: 'sale' }] },
+  id: 'gid://shopify/Collection/1',
+  title: 'Smart',
+  handle: 'smart',
+  descriptionHtml: '',
+  sortOrder: 'BEST_SELLING',
+  templateSuffix: null,
+  image: null,
+  ruleSet: {
+    appliedDisjunctively: false,
+    rules: [{ column: 'TAG', relation: 'EQUALS', condition: 'sale' }],
+  },
 }
 const manualCol: Collection = {
-  id: 'gid://shopify/Collection/2', title: 'Manual', handle: 'manual', descriptionHtml: '',
-  sortOrder: 'MANUAL', templateSuffix: null, image: null, ruleSet: null,
+  id: 'gid://shopify/Collection/2',
+  title: 'Manual',
+  handle: 'manual',
+  descriptionHtml: '',
+  sortOrder: 'MANUAL',
+  templateSuffix: null,
+  image: null,
+  ruleSet: null,
 }
 
 const colPage = (nodes: Collection[], hasNextPage = false, endCursor: string | null = null) => ({
@@ -31,7 +45,7 @@ const colPage = (nodes: Collection[], hasNextPage = false, endCursor: string | n
 })
 const handlePage = (handles: string[], hasNextPage = false, endCursor: string | null = null) => ({
   collection: {
-    products: { pageInfo: { hasNextPage, endCursor }, nodes: handles.map(h => ({ handle: h })) },
+    products: { pageInfo: { hasNextPage, endCursor }, nodes: handles.map((h) => ({ handle: h })) },
   },
 })
 
@@ -81,7 +95,9 @@ describe('exportCollections', () => {
     graphql.mockResolvedValueOnce(colPage([smartCol]))
     await exportCollections()
     expect(outputJson).toHaveBeenCalledWith(
-      expect.stringContaining('collections.json'), expect.any(Array), { spaces: 2 },
+      expect.stringContaining('collections.json'),
+      expect.any(Array),
+      { spaces: 2 },
     )
   })
 })

@@ -19,52 +19,67 @@ vi.mock('./logger.js', () => ({
 // ─── graphql ─────────────────────────────────────────────────────────────────
 
 const okResponse = (data: unknown) => ({
-  ok: true, status: 200,
+  ok: true,
+  status: 200,
   headers: { get: () => null },
-  json: () => Promise.resolve({ data }),
-  text: () => Promise.resolve(''),
+  text: () => Promise.resolve(JSON.stringify({ data })),
 })
 
 const rateLimitResponse = (retryAfter = '0') => ({
-  ok: false, status: 429,
+  ok: false,
+  status: 429,
   headers: { get: (k: string) => (k === 'Retry-After' ? retryAfter : null) },
   text: () => Promise.resolve('rate limited'),
-  json: () => Promise.resolve({}),
 })
 
 describe('shopifyClient.graphql', () => {
   it('returns data on a successful response', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(okResponse({ products: [] })))
-    const result = await shopifyClient.graphql('prod.myshopify.com', '{ products { nodes { id } } }')
+    const result = await shopifyClient.graphql(
+      'prod.myshopify.com',
+      '{ products { nodes { id } } }',
+    )
     expect(result).toEqual({ products: [] })
   })
 
   it('throws for an unknown shop', async () => {
     vi.stubGlobal('fetch', vi.fn())
-    await expect(shopifyClient.graphql('unknown.myshopify.com', 'query')).rejects.toThrow('Unknown shop')
+    await expect(shopifyClient.graphql('unknown.myshopify.com', 'query')).rejects.toThrow(
+      'Unknown shop',
+    )
   })
 
   it('throws on GraphQL errors', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true, status: 200,
-      headers: { get: () => null },
-      json: () => Promise.resolve({ errors: [{ message: 'Access denied' }] }),
-      text: () => Promise.resolve(''),
-    }))
-    await expect(shopifyClient.graphql('dev.myshopify.com', 'query')).rejects.toThrow('Access denied')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: { get: () => null },
+        text: () => Promise.resolve(JSON.stringify({ errors: [{ message: 'Access denied' }] })),
+      }),
+    )
+    await expect(shopifyClient.graphql('dev.myshopify.com', 'query')).rejects.toThrow(
+      'Access denied',
+    )
   })
 
   it('throws on a non-ok HTTP status', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: false, status: 500,
-      headers: { get: () => null },
-      text: () => Promise.resolve('Internal Server Error'),
-    }))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        headers: { get: () => null },
+        text: () => Promise.resolve('Internal Server Error'),
+      }),
+    )
     await expect(shopifyClient.graphql('prod.myshopify.com', 'query')).rejects.toThrow('HTTP 500')
   })
 
   it('retries on 429 and returns data on the next attempt', async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(rateLimitResponse('0'))
       .mockResolvedValue(okResponse({ ok: true }))
     vi.stubGlobal('fetch', fetchMock)
@@ -82,7 +97,11 @@ describe('shopifyClient.graphql', () => {
 // ─── projectAvailable ─────────────────────────────────────────────────────────
 
 const bucket = (overrides: Partial<BucketState> = {}): BucketState => ({
-  available: 1000, maximum: 1000, restoreRate: 50, updatedAt: Date.now(), ...overrides,
+  available: 1000,
+  maximum: 1000,
+  restoreRate: 50,
+  updatedAt: Date.now(),
+  ...overrides,
 })
 
 describe('projectAvailable', () => {
@@ -96,17 +115,32 @@ describe('projectAvailable', () => {
   })
 
   it('caps projection at maximum', () => {
-    const b = bucket({ available: 900, maximum: 1000, restoreRate: 50, updatedAt: Date.now() - 100_000 })
+    const b = bucket({
+      available: 900,
+      maximum: 1000,
+      restoreRate: 50,
+      updatedAt: Date.now() - 100_000,
+    })
     expect(projectAvailable(b)).toBe(1000)
   })
 
   it('fully restores when elapsed time exceeds depletion', () => {
-    const b = bucket({ available: 500, maximum: 1000, restoreRate: 50, updatedAt: Date.now() - 10_000 })
+    const b = bucket({
+      available: 500,
+      maximum: 1000,
+      restoreRate: 50,
+      updatedAt: Date.now() - 10_000,
+    })
     expect(projectAvailable(b)).toBe(1000) // 500 + 10s * 50pts/s = 1000
   })
 
   it('handles a plus-plan bucket (2000 max, 100pts/s)', () => {
-    const b = bucket({ available: 1000, maximum: 2000, restoreRate: 100, updatedAt: Date.now() - 5_000 })
+    const b = bucket({
+      available: 1000,
+      maximum: 2000,
+      restoreRate: 100,
+      updatedAt: Date.now() - 5_000,
+    })
     expect(projectAvailable(b)).toBeCloseTo(1500, 0) // 1000 + 5s * 100pts/s
   })
 })

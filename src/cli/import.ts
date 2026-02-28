@@ -12,7 +12,7 @@ const parseArgs = (): Entity[] => {
   const raw: string | string[] = argv.only ?? argv.o ?? []
   const requested = [raw].flat().filter(Boolean)
   if (!requested.length) return [...VALID_ENTITIES]
-  const invalid = requested.filter(e => !VALID_SET.has(e))
+  const invalid = requested.filter((e) => !VALID_SET.has(e))
   if (invalid.length) {
     logger.error(`Invalid --only: ${invalid.join(', ')}. Valid: ${VALID_ENTITIES.join(', ')}`)
     process.exit(1)

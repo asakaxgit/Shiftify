@@ -15,10 +15,11 @@ export interface ProductVariant {
   barcode: string | null
   price: string
   compareAtPrice: string | null
-  weight: number
-  weightUnit: string
   inventoryPolicy: string
-  inventoryItem: { tracked: boolean }
+  inventoryItem: {
+    tracked: boolean
+    measurement: { weight: { unit: string; value: number } | null }
+  }
   selectedOptions: Array<{ name: string; value: string }>
   position: number
 }

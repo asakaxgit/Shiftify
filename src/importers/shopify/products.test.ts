@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Product, ProductOption, ProductVariant } from '../../types/shopify'
+import type { Product, ProductVariant } from '../../types/shopify'
 
 vi.mock('../../utils/config.js', () => ({
   config: { DEV_SHOP: 'dev.myshopify.com', CONCURRENCY: 5, DATA_DIR: './data', MAPS_DIR: './maps' },
@@ -21,67 +21,87 @@ import { buildVariantInput, importProducts } from './products'
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
 const makeVariant = (overrides: Partial<ProductVariant> = {}): ProductVariant => ({
-  id: 'gid://shopify/ProductVariant/1', title: 'Default Title',
-  sku: null, barcode: null, price: '10.00', compareAtPrice: null,
-  weight: 0, weightUnit: 'KILOGRAMS', inventoryPolicy: 'DENY',
-  inventoryItem: { tracked: false },
+  id: 'gid://shopify/ProductVariant/1',
+  title: 'Default Title',
+  sku: null,
+  barcode: null,
+  price: '10.00',
+  compareAtPrice: null,
+  inventoryPolicy: 'DENY',
+  inventoryItem: { tracked: false, measurement: { weight: null } },
   selectedOptions: [{ name: 'Title', value: 'Default Title' }],
   position: 1,
   ...overrides,
 })
 
 const product: Product = {
-  id: 'gid://shopify/Product/1', title: 'Test', handle: 'test-product', descriptionHtml: '',
-  productType: '', vendor: '', status: 'ACTIVE', tags: [],
+  id: 'gid://shopify/Product/1',
+  title: 'Test',
+  handle: 'test-product',
+  descriptionHtml: '',
+  productType: '',
+  vendor: '',
+  status: 'ACTIVE',
+  tags: [],
   options: [{ name: 'Size', values: ['S'] }],
   variants: { nodes: [makeVariant({ selectedOptions: [{ name: 'Size', value: 'S' }] })] },
   images: { nodes: [] },
 }
 
-const createOk = (handle: string, id = 'gid://shopify/Product/99') => ({
-  productCreate: { product: { id, handle }, userErrors: [] },
+const setOk = (handle: string, id = 'gid://shopify/Product/99') => ({
+  productSet: { product: { id, handle }, userErrors: [] },
 })
-const createError = (message: string) => ({
-  productCreate: { product: null, userErrors: [{ field: ['handle'], message }] },
+const setError = (message: string) => ({
+  productSet: { product: null, userErrors: [{ field: ['handle'], message }] },
 })
 
 // ─── buildVariantInput ───────────────────────────────────────────────────────
 
 describe('buildVariantInput', () => {
-  it('maps selectedOptions to values ordered by the product option list', () => {
-    const options: ProductOption[] = [
-      { name: 'Size', values: ['S', 'M', 'L'] },
-      { name: 'Color', values: ['Red', 'Blue'] },
-    ]
+  it('maps selectedOptions to optionValues by name', () => {
     const variant = makeVariant({
-      selectedOptions: [{ name: 'Color', value: 'Blue' }, { name: 'Size', value: 'M' }],
+      selectedOptions: [
+        { name: 'Color', value: 'Blue' },
+        { name: 'Size', value: 'M' },
+      ],
     })
-    expect(buildVariantInput(variant, options).options).toEqual(['M', 'Blue'])
+    expect(buildVariantInput(variant).optionValues).toEqual([
+      { optionName: 'Color', name: 'Blue' },
+      { optionName: 'Size', name: 'M' },
+    ])
   })
 
-  it('sets inventoryManagement to SHOPIFY when tracked', () => {
-    expect(buildVariantInput(makeVariant({ inventoryItem: { tracked: true } }), []).inventoryManagement).toBe('SHOPIFY')
+  it('sets inventoryItem.tracked to true when tracked', () => {
+    expect(
+      buildVariantInput(
+        makeVariant({ inventoryItem: { tracked: true, measurement: { weight: null } } }),
+      ).inventoryItem.tracked,
+    ).toBe(true)
   })
 
-  it('sets inventoryManagement to NOT_MANAGED when untracked', () => {
-    expect(buildVariantInput(makeVariant({ inventoryItem: { tracked: false } }), []).inventoryManagement).toBe('NOT_MANAGED')
+  it('sets inventoryItem.tracked to false when untracked', () => {
+    expect(buildVariantInput(makeVariant()).inventoryItem.tracked).toBe(false)
   })
 
   it('converts null sku to undefined', () => {
-    expect(buildVariantInput(makeVariant({ sku: null }), []).sku).toBeUndefined()
+    expect(buildVariantInput(makeVariant({ sku: null })).sku).toBeUndefined()
   })
 
   it('preserves a non-null sku', () => {
-    expect(buildVariantInput(makeVariant({ sku: 'SKU-123' }), []).sku).toBe('SKU-123')
+    expect(buildVariantInput(makeVariant({ sku: 'SKU-123' })).sku).toBe('SKU-123')
   })
 
   it('converts null compareAtPrice to undefined', () => {
-    expect(buildVariantInput(makeVariant({ compareAtPrice: null }), []).compareAtPrice).toBeUndefined()
+    expect(buildVariantInput(makeVariant({ compareAtPrice: null })).compareAtPrice).toBeUndefined()
   })
 
-  it('falls back to empty string for a missing option value', () => {
-    const variant = makeVariant({ selectedOptions: [] })
-    expect(buildVariantInput(variant, [{ name: 'Material', values: ['Cotton'] }]).options).toEqual([''])
+  it('includes weight measurement when present', () => {
+    const variant = makeVariant({
+      inventoryItem: { tracked: false, measurement: { weight: { unit: 'KILOGRAMS', value: 1.5 } } },
+    })
+    expect(buildVariantInput(variant).inventoryItem.measurement).toEqual({
+      weight: { value: 1.5, unit: 'KILOGRAMS' },
+    })
   })
 })
 
@@ -92,7 +112,7 @@ describe('importProducts', () => {
 
   it('creates a product and saves the handle→id map', async () => {
     readJson.mockResolvedValue([product])
-    graphql.mockResolvedValue(createOk('test-product', 'gid://shopify/Product/99'))
+    graphql.mockResolvedValue(setOk('test-product', 'gid://shopify/Product/99'))
     await importProducts()
     expect(outputJson).toHaveBeenCalledWith(
       expect.stringContaining('product-id-map.json'),
@@ -101,16 +121,20 @@ describe('importProducts', () => {
     )
   })
 
-  it('calls productCreate with the correct shop', async () => {
+  it('calls productSet with the correct shop', async () => {
     readJson.mockResolvedValue([product])
-    graphql.mockResolvedValue(createOk('test-product'))
+    graphql.mockResolvedValue(setOk('test-product'))
     await importProducts()
-    expect(graphql).toHaveBeenCalledWith('dev.myshopify.com', expect.any(String), expect.any(Object))
+    expect(graphql).toHaveBeenCalledWith(
+      'dev.myshopify.com',
+      expect.any(Object),
+      expect.any(Object),
+    )
   })
 
   it('skips a product on userErrors and excludes it from the map', async () => {
     readJson.mockResolvedValue([product])
-    graphql.mockResolvedValue(createError('Handle already taken'))
+    graphql.mockResolvedValue(setError('Handle already taken'))
     await importProducts()
     expect(Object.keys(outputJson.mock.calls[0][1])).toHaveLength(0)
   })
@@ -126,8 +150,8 @@ describe('importProducts', () => {
     const productB: Product = { ...product, handle: 'product-b' }
     readJson.mockResolvedValue([product, productB])
     graphql
-      .mockResolvedValueOnce(createOk('test-product', 'gid://shopify/Product/1'))
-      .mockResolvedValueOnce(createOk('product-b', 'gid://shopify/Product/2'))
+      .mockResolvedValueOnce(setOk('test-product', 'gid://shopify/Product/1'))
+      .mockResolvedValueOnce(setOk('product-b', 'gid://shopify/Product/2'))
     await importProducts()
     expect(outputJson.mock.calls[0][1]).toEqual({
       'test-product': 'gid://shopify/Product/1',

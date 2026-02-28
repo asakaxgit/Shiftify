@@ -1,75 +1,20 @@
-import { outputJson } from 'fs-extra'
 import path from 'node:path'
-import type { Product } from '../../types/shopify.js'
-import { config } from '../../utils/config.js'
-import { logger } from '../../utils/logger.js'
-import { shopifyClient } from '../../utils/shopifyClient.js'
+import { outputJson } from 'fs-extra'
+import { ExportProductsDocument, type ExportProductsQuery } from '../../gql/graphql'
+import { config } from '../../utils/config'
+import { logger } from '../../utils/logger'
+import { shopifyClient } from '../../utils/shopifyClient'
 
-const QUERY = /* GraphQL */ `
-  query ExportProducts($cursor: String) {
-    products(first: 250, after: $cursor) {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-      nodes {
-        id
-        title
-        handle
-        descriptionHtml
-        productType
-        vendor
-        status
-        tags
-        options {
-          name
-          values
-        }
-        variants(first: 100) {
-          nodes {
-            id
-            title
-            sku
-            barcode
-            price
-            compareAtPrice
-            weight
-            weightUnit
-            inventoryPolicy
-            inventoryItem { tracked }
-            selectedOptions { name value }
-            position
-          }
-        }
-        images(first: 20) {
-          nodes {
-            id
-            url
-            altText
-            width
-            height
-          }
-        }
-      }
-    }
-  }
-`
-
-type Page = {
-  products: {
-    pageInfo: { hasNextPage: boolean; endCursor: string | null }
-    nodes: Product[]
-  }
-}
+type ProductNode = ExportProductsQuery['products']['nodes'][number]
 
 export const exportProducts = async (): Promise<void> => {
   logger.info('Exporting products...')
   const shop = config.PROD_SHOP
-  const all: Product[] = []
+  const all: ProductNode[] = []
   let cursor: string | undefined
 
   do {
-    const data = await shopifyClient.graphql<Page>(shop, QUERY, cursor ? { cursor } : {})
+    const data = await shopifyClient.graphql(shop, ExportProductsDocument, cursor ? { cursor } : {})
     const { nodes, pageInfo } = data.products
     all.push(...nodes)
     cursor = pageInfo.hasNextPage && pageInfo.endCursor ? pageInfo.endCursor : undefined

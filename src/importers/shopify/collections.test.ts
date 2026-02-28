@@ -18,13 +18,27 @@ vi.mock('fs-extra', () => ({ readJson, pathExists }))
 import { importCollections } from './collections'
 
 const smartCol: Collection = {
-  id: 'gid://shopify/Collection/1', title: 'Smart', handle: 'smart-col', descriptionHtml: '',
-  sortOrder: 'BEST_SELLING', templateSuffix: null, image: null,
-  ruleSet: { appliedDisjunctively: false, rules: [{ column: 'TAG', relation: 'EQUALS', condition: 'sale' }] },
+  id: 'gid://shopify/Collection/1',
+  title: 'Smart',
+  handle: 'smart-col',
+  descriptionHtml: '',
+  sortOrder: 'BEST_SELLING',
+  templateSuffix: null,
+  image: null,
+  ruleSet: {
+    appliedDisjunctively: false,
+    rules: [{ column: 'TAG', relation: 'EQUALS', condition: 'sale' }],
+  },
 }
 const manualCol: Collection = {
-  id: 'gid://shopify/Collection/2', title: 'Manual', handle: 'manual-col', descriptionHtml: '',
-  sortOrder: 'MANUAL', templateSuffix: null, image: null, ruleSet: null,
+  id: 'gid://shopify/Collection/2',
+  title: 'Manual',
+  handle: 'manual-col',
+  descriptionHtml: '',
+  sortOrder: 'MANUAL',
+  templateSuffix: null,
+  image: null,
+  ruleSet: null,
   productHandles: ['product-a', 'product-b'],
 }
 
@@ -50,16 +64,20 @@ describe('importCollections', () => {
   })
 
   it('creates a manual collection and calls collectionAddProducts', async () => {
-    readJson
-      .mockResolvedValueOnce([manualCol])
-      .mockResolvedValueOnce({ 'product-a': 'gid://shopify/Product/1', 'product-b': 'gid://shopify/Product/2' })
+    readJson.mockResolvedValueOnce([manualCol]).mockResolvedValueOnce({
+      'product-a': 'gid://shopify/Product/1',
+      'product-b': 'gid://shopify/Product/2',
+    })
     pathExists.mockResolvedValue(true)
     graphql
       .mockResolvedValueOnce(createOk('gid://shopify/Collection/99', 'manual-col'))
       .mockResolvedValueOnce(addProductsOk())
     await importCollections()
     expect(graphql).toHaveBeenCalledTimes(2)
-    expect(graphql.mock.calls[1][2].productIds).toEqual(['gid://shopify/Product/1', 'gid://shopify/Product/2'])
+    expect(graphql.mock.calls[1][2].productIds).toEqual([
+      'gid://shopify/Product/1',
+      'gid://shopify/Product/2',
+    ])
   })
 
   it('warns and skips product membership when id map is missing', async () => {

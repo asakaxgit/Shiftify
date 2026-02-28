@@ -2,7 +2,9 @@
   "name": "shiftify",
   "version": "0.1.0",
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "export": "tsx src/cli/export.ts",
     "import": "tsx src/cli/import.ts",
@@ -11,19 +13,24 @@
     "format": "biome format ./src --write",
     "check": "biome check ./src",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:watch": "vitest",
+    "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {
     "chalk": "^5.3.0",
     "dotenv": "^16.3.1",
     "fs-extra": "^11.2.0",
+    "graphql": "^16.13.0",
     "minimist": "^1.2.8",
     "p-limit": "^6.1.0",
     "winston": "^3.18.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",
-    "@types/fs-extra": "^11.0.4",
+    "@graphql-codegen/cli": "^6.1.2",
+    "@graphql-codegen/client-preset": "^5.2.3",
+"@types/fs-extra": "^11.0.4",
     "@types/minimist": "^1.2.5",
     "@types/node": "^20.0.0",
     "tsx": "^4.0.0",

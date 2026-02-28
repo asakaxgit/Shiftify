@@ -17,9 +17,17 @@ vi.mock('fs-extra', () => ({ outputJson }))
 import { exportProducts } from './products'
 
 const productA: Product = {
-  id: 'gid://shopify/Product/1', title: 'A', handle: 'product-a', descriptionHtml: '',
-  productType: '', vendor: '', status: 'ACTIVE', tags: [], options: [],
-  variants: { nodes: [] }, images: { nodes: [] },
+  id: 'gid://shopify/Product/1',
+  title: 'A',
+  handle: 'product-a',
+  descriptionHtml: '',
+  productType: '',
+  vendor: '',
+  status: 'ACTIVE',
+  tags: [],
+  options: [],
+  variants: { nodes: [] },
+  images: { nodes: [] },
 }
 const productB: Product = { ...productA, id: 'gid://shopify/Product/2', handle: 'product-b' }
 
@@ -34,7 +42,9 @@ describe('exportProducts', () => {
     graphql.mockResolvedValueOnce(page([productA], false))
     await exportProducts()
     expect(graphql).toHaveBeenCalledTimes(1)
-    expect(outputJson).toHaveBeenCalledWith(expect.stringContaining('products.json'), [productA], { spaces: 2 })
+    expect(outputJson).toHaveBeenCalledWith(expect.stringContaining('products.json'), [productA], {
+      spaces: 2,
+    })
   })
 
   it('follows pagination cursors and accumulates all products', async () => {
@@ -43,15 +53,19 @@ describe('exportProducts', () => {
       .mockResolvedValueOnce(page([productB], false))
     await exportProducts()
     expect(graphql).toHaveBeenCalledTimes(2)
-    expect(graphql).toHaveBeenNthCalledWith(2, 'prod.myshopify.com', expect.any(String), { cursor: 'cur1' })
+    expect(graphql).toHaveBeenNthCalledWith(2, 'prod.myshopify.com', expect.any(Object), {
+      cursor: 'cur1',
+    })
     expect(outputJson).toHaveBeenCalledWith(
-      expect.stringContaining('products.json'), [productA, productB], { spaces: 2 },
+      expect.stringContaining('products.json'),
+      [productA, productB],
+      { spaces: 2 },
     )
   })
 
   it('passes empty vars on the first request (no cursor)', async () => {
     graphql.mockResolvedValueOnce(page([], false))
     await exportProducts()
-    expect(graphql).toHaveBeenCalledWith('prod.myshopify.com', expect.any(String), {})
+    expect(graphql).toHaveBeenCalledWith('prod.myshopify.com', expect.any(Object), {})
   })
 })

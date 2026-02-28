@@ -1,5 +1,7 @@
-import { config } from './config.js'
-import { logger } from './logger.js'
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core'
+import { print } from 'graphql'
+import { config } from './config'
+import { logger } from './logger'
 
 // Shopify leaky-bucket defaults per plan
 const PLAN_BUCKETS = {
@@ -25,7 +27,7 @@ type GraphQLResponse<T = unknown> = {
   extensions?: { cost?: QueryCost }
 }
 
-export interface BucketState {
+export type BucketState = {
   available: number
   maximum: number
   restoreRate: number
@@ -62,18 +64,22 @@ export const projectAvailable = (bucket: BucketState): number => {
   return Math.min(bucket.maximum, bucket.available + elapsedSec * bucket.restoreRate)
 }
 
-const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
 const MAX_RETRIES = 3
 // Wait if bucket is projected below this fraction of max before sending
 const LOW_WATER_FRACTION = 0.1
 
 export const shopifyClient = {
-  async graphql<T = unknown>(
+  async graphql<
+    TData = unknown,
+    TVariables extends Record<string, unknown> = Record<string, unknown>,
+  >(
     shop: string,
-    query: string,
-    vars?: Record<string, unknown>,
-  ): Promise<T> {
+    document: TypedDocumentNode<TData, TVariables> | string,
+    vars?: TVariables,
+  ): Promise<TData> {
+    const query = typeof document === 'string' ? document : print(document)
     const token = getToken(shop)
     const url = `https://${shop}/admin/api/${config.API_VERSION}/graphql.json`
     const bucket = getBucket(shop)
@@ -104,7 +110,8 @@ export const shopifyClient = {
         logger.warn(
           `[throttle] ${shop} 429 rate limited, retrying in ${retryAfter}s (attempt ${attempt}/${MAX_RETRIES})`,
         )
-        if (attempt === MAX_RETRIES) throw new Error(`Shopify 429 after ${MAX_RETRIES} retries on ${shop}`)
+        if (attempt === MAX_RETRIES)
+          throw new Error(`Shopify 429 after ${MAX_RETRIES} retries on ${shop}`)
         await sleep(retryAfter * 1000)
         continue
       }
@@ -113,7 +120,7 @@ export const shopifyClient = {
         throw new Error(`Shopify HTTP ${res.status} on ${shop}: ${await res.text()}`)
       }
 
-      const json: GraphQLResponse<T> = await res.json()
+      const json: GraphQLResponse<TData> = JSON.parse(await res.text())
 
       // Update per-shop bucket from response cost metadata
       const cost = json.extensions?.cost
@@ -125,7 +132,7 @@ export const shopifyClient = {
       }
 
       if (json.errors?.length) {
-        const msgs = json.errors.map(e => e.message).join('; ')
+        const msgs = json.errors.map((e) => e.message).join('; ')
         throw new Error(`Shopify GraphQL error on ${shop}: ${msgs}`)
       }
 
