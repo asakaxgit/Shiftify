@@ -22,13 +22,19 @@ npm run export
 
 # Export specific entities
 npm run export -- --only products
-npm run export -- --only products,collections
+npm run export -- --only products --only collections
+
+# Export everything except one entity
+npm run export -- --skip collections
 
 # Import all entities
 npm run import
 
 # Import specific entities
 npm run import -- --only products
+
+# Import everything except one entity
+npm run import -- --skip products
 ```
 
 ## Scripts
@@ -37,11 +43,12 @@ npm run import -- --only products
 | ------------ | ------------------------------ |
 | `npm run export` | Export from production store   |
 | `npm run import` | Import to dev store            |
+| `npm run test` | Unit tests                     |
+| `npm run test:integration` | Live integration tests (requires `.env.test.integration`) |
+| `npm run codegen` | Regenerate `src/gql/` from `.graphql` files |
 | `npm run typecheck` | TypeScript check               |
-| `npm run lint` | Biome lint                     |
-| `npm run format` | Biome format                   |
 | `npm run check` | Biome lint + format            |
-| `npm run test` | Run tests (requires Node 18+)  |
+| `npm run format` | Biome format --write           |
 
 ## Project Structure
 

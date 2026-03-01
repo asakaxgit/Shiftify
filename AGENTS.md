@@ -9,6 +9,7 @@ node --version                 # must be 18+  (.node-version = v24.13.0)
 npm run export                 # export from PROD_SHOP → data/
 npm run import                 # import to DEV_SHOP from data/
 npm run export -- --only products --only collections
+npm run export -- --skip collections    # inverse of --only; cannot combine with --only
 npm run import -- --only products
 npm run test                   # vitest unit tests
 npm run test:integration       # live integration tests (requires .env.test.integration)
