@@ -65,6 +65,23 @@ codegen.ts              # graphql-codegen config (Shopify public schema proxy)
 - **Strict TypeScript** — `strict: true`; use type predicates (`(x): x is T =>`) instead of casts
 - **GraphQL operations** live in co-located `.graphql` files; run `npm run codegen` after changing them
 
+## Documentation Sync Rule
+
+Any change that affects a public interface or usage pattern **must be reflected in this AGENTS.md file**.
+You **must** update this document whenever you make changes to:
+- CLI command names, flags, or arguments
+- Environment variable names or required values
+- Data file formats, output structure, or directory paths
+- Key types, function or module signatures, or usage conventions
+- shopifyClient API or other utility usage patterns
+
+> **Keep this file in sync with all user-visible or contributor-facing changes to interface, configuration, or usage.**
+
+This ensures users and contributors always have up-to-date, accurate guide references.
+All interface-affecting PRs must review and update AGENTS.md accordingly.
+
+---
+
 ## GraphQL Codegen
 
 `src/gql/` is fully generated — do not edit by hand.
