@@ -1,8 +1,12 @@
 import minimist from 'minimist'
 import { logger } from '../utils/logger'
 
-export type Entity = 'products' | 'collections'
-export const VALID_ENTITIES: readonly Entity[] = ['products', 'collections']
+export type Entity = 'products' | 'collections' | 'metafield-definitions'
+export const VALID_ENTITIES: readonly Entity[] = [
+  'products',
+  'collections',
+  'metafield-definitions',
+]
 const VALID_SET = new Set<string>(VALID_ENTITIES)
 
 export const parseEntities = (): Entity[] => {

@@ -14,7 +14,7 @@ vi.mock('../../utils/shopifyClient.js', () => ({ shopifyClient: { graphql } }))
 const outputJson = vi.hoisted(() => vi.fn())
 vi.mock('fs-extra', () => ({ outputJson }))
 
-import { exportProducts } from './products'
+import { exportProducts } from './exporter'
 
 const productA: Product = {
   id: 'gid://shopify/Product/1',

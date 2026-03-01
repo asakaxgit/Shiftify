@@ -15,7 +15,7 @@ const readJson = vi.hoisted(() => vi.fn())
 const pathExists = vi.hoisted(() => vi.fn())
 vi.mock('fs-extra', () => ({ readJson, pathExists }))
 
-import { importCollections } from './collections'
+import { importCollections } from './importer'
 
 const smartCol: Collection = {
   id: 'gid://shopify/Collection/1',

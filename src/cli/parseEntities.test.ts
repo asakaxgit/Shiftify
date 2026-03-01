@@ -23,7 +23,7 @@ afterEach(() => {
 
 describe('parseEntities', () => {
   it('returns all entities when no args given', () => {
-    expect(parseEntities()).toEqual(['products', 'collections'])
+    expect(parseEntities()).toEqual(['products', 'collections', 'metafield-definitions'])
   })
 
   it('--only products returns only products', () => {
@@ -46,19 +46,19 @@ describe('parseEntities', () => {
     expect(parseEntities()).toEqual(['products', 'collections'])
   })
 
-  it('--skip products returns only collections', () => {
+  it('--skip products returns collections and metafield-definitions', () => {
     setArgv('--skip', 'products')
-    expect(parseEntities()).toEqual(['collections'])
+    expect(parseEntities()).toEqual(['collections', 'metafield-definitions'])
   })
 
-  it('--skip collections returns only products', () => {
+  it('--skip collections returns products and metafield-definitions', () => {
     setArgv('--skip', 'collections')
-    expect(parseEntities()).toEqual(['products'])
+    expect(parseEntities()).toEqual(['products', 'metafield-definitions'])
   })
 
   it('-s shorthand works', () => {
     setArgv('-s', 'collections')
-    expect(parseEntities()).toEqual(['products'])
+    expect(parseEntities()).toEqual(['products', 'metafield-definitions'])
   })
 
   it('invalid --only value exits with error', () => {

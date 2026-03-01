@@ -43,6 +43,25 @@ export interface Product {
   images: { nodes: ProductImage[] }
 }
 
+// ─── MetafieldDefinition ──────────────────────────────────────────────────────
+
+export type MetafieldDefinitionValidation = {
+  name: string
+  type: string
+  value: string | null
+}
+
+export type MetafieldDefinition = {
+  name: string
+  namespace: string
+  key: string
+  description: string | null
+  type: string
+  ownerType: string
+  pinnedPosition: number | null
+  validations: MetafieldDefinitionValidation[]
+}
+
 // ─── Collection ───────────────────────────────────────────────────────────────
 
 export interface CollectionRule {

@@ -1,5 +1,6 @@
-import { importCollections } from '../importers/shopify/collections'
-import { importProducts } from '../importers/shopify/products'
+import { importCollections } from '../shopify/collections/importer'
+import { importMetafieldDefinitions } from '../shopify/metafieldDefinitions/importer'
+import { importProducts } from '../shopify/products/importer'
 import { logger } from '../utils/logger'
 import { parseEntities } from './parseEntities'
 
@@ -7,6 +8,7 @@ const main = async () => {
   const entities = parseEntities()
   logger.info(`Importing: ${entities.join(', ')}`)
 
+  if (entities.includes('metafield-definitions')) await importMetafieldDefinitions()
   if (entities.includes('products')) await importProducts()
   if (entities.includes('collections')) await importCollections()
 

@@ -1,6 +1,6 @@
 # Shiftify — Agent Guide
 
-TypeScript CLI for migrating Shopify production store data (products, collections) to a dev store.
+TypeScript CLI for migrating Shopify production store data (products, collections, metafield definitions) to a dev store.
 
 ## Commands
 
@@ -8,9 +8,9 @@ TypeScript CLI for migrating Shopify production store data (products, collection
 node --version                 # must be 18+  (.node-version = v24.13.0)
 npm run export                 # export from PROD_SHOP → data/
 npm run import                 # import to DEV_SHOP from data/
-npm run export -- --only products --only collections
+npm run export -- --only products --only collections --only metafield-definitions
 npm run export -- --skip collections    # inverse of --only; cannot combine with --only
-npm run import -- --only products
+npm run import -- --only metafield-definitions
 npm run test                   # vitest unit tests
 npm run test:integration       # live integration tests (requires .env.test.integration)
 npm run codegen                # regenerate src/gql/ from .graphql files
@@ -37,16 +37,14 @@ src/
 │   ├── logger.ts           # info / warn / error / success
 │   ├── shopifyClient.ts    # GraphQL fetch + adaptive throttle + 429 retry
 │   └── idMap.ts            # stub (not yet implemented)
-├── exporters/shopify/
-│   ├── products.{ts,graphql}     # paginated export → data/products.json
-│   └── collections.{ts,graphql}  # paginated export + manual membership → data/collections.json
-└── importers/shopify/
-    ├── products.{ts,graphql}     # productSet mutations → maps/product-id-map.json
-    └── collections.{ts,graphql}  # collectionCreate + collectionAddProducts
+└── shopify/
+    ├── products/           # exporter.{ts,graphql,test.ts} + importer.{ts,graphql,test.ts}
+    ├── collections/        # exporter + importer
+    └── metafieldDefinitions/  # exporter + importer
 ```
 
 ```
-data/                   # export output (products.json, collections.json)
+data/                   # export output (products.json, collections.json, metafield-definitions.json)
 maps/                   # product-id-map.json: { handle → new GID } written by importProducts
 src/**/*.test.ts        # vitest unit tests (co-located with source)
 tests/integration/      # live integration tests against a real dev store
@@ -88,7 +86,7 @@ All interface-affecting PRs must review and update AGENTS.md accordingly.
 
 - Config: `codegen.ts` (uses Shopify's public schema proxy at `https://shopify.dev/admin-graphql-direct-proxy/2026-01`)
 - After editing any `.graphql` file: `npm run codegen`
-- Generated exports used in source: `ExportProductsDocument`, `ExportCollectionsDocument`, `CollectionProductsDocument`, `ProductSetDocument`, `CollectionCreateDocument`, `CollectionAddProductsDocument`
+- Generated exports used in source: `ExportProductsDocument`, `ExportCollectionsDocument`, `CollectionProductsDocument`, `ProductSetDocument`, `CollectionCreateDocument`, `CollectionAddProductsDocument`, `ExportMetafieldDefinitionsDocument`, `MetafieldDefinitionCreateDocument`
 - `shopifyClient.graphql(shop, SomeDocument, vars)` infers `TData` and `TVariables` from the `TypedDocumentNode` — no explicit type parameter needed at call sites
 
 ## shopifyClient
@@ -102,12 +100,15 @@ All interface-affecting PRs must review and update AGENTS.md accordingly.
 
 ## Export → Import Flow
 
-1. `exportProducts` → `data/products.json` (all products with variants, options, images)
-2. `exportCollections` → `data/collections.json` (metadata + ruleSet; manual collections include `productHandles[]`)
-3. `importProducts` → creates products on DEV, writes `maps/product-id-map.json`
-4. `importCollections` → loads map, creates collections, resolves manual membership via handle→GID lookup
+1. `exportMetafieldDefinitions` → `data/metafield-definitions.json` (all owner types: PRODUCT, PRODUCT_VARIANT, COLLECTION, CUSTOMER, ORDER, PAGE, BLOG, ARTICLE, LOCATION, SHOP)
+2. `exportProducts` → `data/products.json` (all products with variants, options, images)
+3. `exportCollections` → `data/collections.json` (metadata + ruleSet; manual collections include `productHandles[]`)
+4. `importMetafieldDefinitions` → creates definitions on DEV (skips on `userErrors`, e.g. already exists)
+5. `importProducts` → creates products on DEV, writes `maps/product-id-map.json`
+6. `importCollections` → loads map, creates collections, resolves manual membership via handle→GID lookup
 
-Collections must be imported after products when manual collections are present.
+**Import order matters:** metafield-definitions → products → collections.
+The CLI enforces this order automatically when all entities are imported together.
 
 ## Environment
 

@@ -16,7 +16,7 @@ const readJson = vi.hoisted(() => vi.fn())
 const outputJson = vi.hoisted(() => vi.fn())
 vi.mock('fs-extra', () => ({ readJson, outputJson }))
 
-import { buildVariantInput, importProducts } from './products'
+import { buildVariantInput, importProducts } from './importer'
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
