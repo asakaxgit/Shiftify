@@ -15,9 +15,10 @@ const chunk = <T>(arr: T[], size: number): T[][] => {
 /** Normalize display enum (e.g. "Manual", "Vendor") to GraphQL enum (MANUAL, VENDOR). */
 const toGraphQLEnum = (s: string): string => s.toUpperCase().replace(/\s+/g, '_')
 
-/** Map API/display sortOrder variants to CollectionSortOrder enum (e.g. CREATED_DESCENDING → CREATED_DESC). */
+/** Map API/display sortOrder variants to CollectionSortOrder enum. */
 const SORT_ORDER_ALIASES: Record<string, string> = {
   CREATED_DESCENDING: 'CREATED_DESC',
+  ALPHABET: 'ALPHA_ASC',
 }
 const toSortOrder = (s: string): string =>
   SORT_ORDER_ALIASES[toGraphQLEnum(s)] ?? toGraphQLEnum(s)
