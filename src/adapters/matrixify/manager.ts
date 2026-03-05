@@ -25,12 +25,12 @@ export const getCandidates = async (): Promise<Record<Entity, boolean>> => {
 
   const products = hasSheet(sheets, ['Products', 'Product'])
   const collections = hasSheet(sheets, [
-      'Smart Collections',
-      'Smart Collection',
-      'Custom Collections',
-      'Custom Collection',
-    ])
-  const metafieldDefinitions = false
+    'Smart Collections',
+    'Smart Collection',
+    'Custom Collections',
+    'Custom Collection',
+  ])
+  const metafieldDefinitions = hasSheet(sheets, ['Products', 'Product'])
 
   const candidates: Record<Entity, boolean> = {
     products,
@@ -40,7 +40,9 @@ export const getCandidates = async (): Promise<Record<Entity, boolean>> => {
 
   const available = ENTITIES.filter((e) => candidates[e])
   if (available.length === 0) {
-    logger.warn(`Matrixify XLSX has no known sheets (Products, Smart/Custom Collections); path: ${xlsxPath}`)
+    logger.warn(
+      `Matrixify XLSX has no known sheets (Products, Smart/Custom Collections); path: ${xlsxPath}`,
+    )
   }
 
   return candidates

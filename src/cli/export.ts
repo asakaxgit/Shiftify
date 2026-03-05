@@ -3,8 +3,8 @@ import { exportCollections } from '#adapters/shopify/collections/exporter'
 import { exportMetafieldDefinitions } from '#adapters/shopify/metafieldDefinitions/exporter'
 import { exportProducts } from '#adapters/shopify/products/exporter'
 import { logger } from '#utils/logger'
-import { getCandidates, getSource } from './sourceManager'
 import { parseEntities } from './parseEntities'
+import { getCandidates, getSource } from './sourceManager'
 
 const main = async () => {
   const requested = parseEntities()
@@ -27,6 +27,7 @@ const main = async () => {
     await normalizeFromXlsx({
       products: entities.includes('products'),
       collections: entities.includes('collections'),
+      metafieldDefinitions: entities.includes('metafield-definitions'),
     })
   } else {
     if (entities.includes('metafield-definitions')) await exportMetafieldDefinitions()

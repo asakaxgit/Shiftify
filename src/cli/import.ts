@@ -2,8 +2,8 @@ import { importCollections } from '#adapters/shopify/collections/importer'
 import { importMetafieldDefinitions } from '#adapters/shopify/metafieldDefinitions/importer'
 import { importProducts } from '#adapters/shopify/products/importer'
 import { logger } from '#utils/logger'
-import { getCandidates, getSource } from './sourceManager'
 import { parseEntities } from './parseEntities'
+import { getCandidates, getSource } from './sourceManager'
 
 const main = async () => {
   const requested = parseEntities()

@@ -35,7 +35,8 @@ src/
 │       ├── index.ts        # normalizeFromXlsx
 │       ├── manager.ts      # getCandidates() = which sheets exist (used by CLI)
 │       ├── products.ts     # Products sheet → products.json
-│       └── collections.ts # Smart/Custom Collections → collections.json
+│       ├── collections.ts  # Smart/Custom Collections → collections.json
+│       └── metafieldDefinitions.ts  # infer defs from Metafield: / Variant Metafield: column headers
 ├── cli/
 │   ├── export.ts           # entry: npm run export
 │   ├── import.ts           # entry: npm run import
@@ -114,7 +115,7 @@ All interface-affecting PRs must review and update AGENTS.md accordingly.
 The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manager** which entities are **candidates** (can be imported/exported). Only requested entities that are candidates are run; others are skipped with a warning.
 
 - **Shopify:** all entities are candidates (products, collections, metafield-definitions).
-- **Matrixify XLSX:** candidates = which sheets exist in the XLSX (e.g. `Products` or `Product` → products; `Smart Collections` / `Custom Collections` → collections; metafield-definitions are never candidates).
+- **Matrixify XLSX:** candidates = which sheets exist in the XLSX (e.g. `Products` or `Product` → products and metafield-definitions; `Smart Collections` / `Custom Collections` → collections). Metafield-definitions are **inferred** from metafield column headers in those sheets (see below).
 
 `getCandidates(sourceType)` is implemented per source (e.g. `src/adapters/matrixify/manager.ts` for matrixify). Export and import both use it to filter the requested entity list before running.
 
@@ -128,7 +129,7 @@ The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manag
 
 **When source is Matrixify XLSX** (`SOURCE_TYPE=matrixify-xlsx`):
 
-1. Export reads the XLSX (path from `SOURCE_XLSX_PATH` or a file in `DATA_DIR`), normalizes the **Products** sheet to `data/products.json` and optionally **Smart Collections** / **Custom Collections** sheets to `data/collections.json`. Metafield definitions are not available from XLSX and are skipped.
+1. Export reads the XLSX (path from `SOURCE_XLSX_PATH` or a file in `DATA_DIR`), normalizes the **Products** sheet to `data/products.json`, optionally **Smart Collections** / **Custom Collections** to `data/collections.json`, and optionally **metafield definitions** to `data/metafield-definitions.json`. Metafield definitions are **inferred** from column headers: any column whose header matches `Metafield: namespace.key [type]` or `Variant Metafield: namespace.key [type]` in the Products sheet, or the same product-style pattern in Smart/Custom Collections sheets, becomes one definition (ownerType PRODUCT, PRODUCTVARIANT, or COLLECTION). **Limitations:** description, validations, and pinnedPosition are not available from headers and are set to `null`/`[]`; name is derived from the key.
 
 **Import** (same for both source types):
 

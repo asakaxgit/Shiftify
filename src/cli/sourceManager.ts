@@ -1,7 +1,7 @@
+import { getCandidates as getMatrixifyCandidates } from '#adapters/matrixify/manager'
 import type { Entity } from '#cli/parseEntities'
 import type { SourceType } from '#utils/config'
 import { config } from '#utils/config'
-import { getCandidates as getMatrixifyCandidates } from '#adapters/matrixify/manager'
 
 export type CandidateMap = Record<Entity, boolean>
 

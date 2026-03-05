@@ -20,8 +20,7 @@ const SORT_ORDER_ALIASES: Record<string, string> = {
   CREATED_DESCENDING: 'CREATED_DESC',
   ALPHABET: 'ALPHA_ASC',
 }
-const toSortOrder = (s: string): string =>
-  SORT_ORDER_ALIASES[toGraphQLEnum(s)] ?? toGraphQLEnum(s)
+const toSortOrder = (s: string): string => SORT_ORDER_ALIASES[toGraphQLEnum(s)] ?? toGraphQLEnum(s)
 
 const addProducts = async (
   shop: string,
