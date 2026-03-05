@@ -1,10 +1,10 @@
 import path from 'node:path'
 import { pathExists, readJson } from 'fs-extra'
-import { CollectionAddProductsDocument, CollectionCreateDocument } from '../../gql/graphql'
-import type { Collection } from '../../types/shopify'
-import { config } from '../../utils/config'
-import { logger } from '../../utils/logger'
-import { shopifyClient } from '../../utils/shopifyClient'
+import { CollectionAddProductsDocument, CollectionCreateDocument } from '#gql/graphql'
+import type { Collection } from '#types/shopify'
+import { config } from '#utils/config'
+import { logger } from '#utils/logger'
+import { shopifyClient } from '#utils/shopifyClient'
 
 const chunk = <T>(arr: T[], size: number): T[][] => {
   const out: T[][] = []
@@ -38,7 +38,7 @@ const addProducts = async (
 }
 
 export const importCollections = async (): Promise<void> => {
-  const shop = config.DEV_SHOP
+  const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'collections.json')
   const mapPath = path.join(config.MAPS_DIR, 'product-id-map.json')
 

@@ -1,10 +1,10 @@
 import path from 'node:path'
 import { outputJson } from 'fs-extra'
-import { CollectionProductsDocument, ExportCollectionsDocument } from '../../gql/graphql'
-import type { Collection } from '../../types/shopify'
-import { config } from '../../utils/config'
-import { logger } from '../../utils/logger'
-import { shopifyClient } from '../../utils/shopifyClient'
+import { CollectionProductsDocument, ExportCollectionsDocument } from '#gql/graphql'
+import type { Collection } from '#types/shopify'
+import { config } from '#utils/config'
+import { logger } from '#utils/logger'
+import { shopifyClient } from '#utils/shopifyClient'
 
 const fetchManualProductHandles = async (shop: string, collectionId: string): Promise<string[]> => {
   const handles: string[] = []
@@ -27,7 +27,7 @@ const fetchManualProductHandles = async (shop: string, collectionId: string): Pr
 
 export const exportCollections = async (): Promise<void> => {
   logger.info('Exporting collections...')
-  const shop = config.PROD_SHOP
+  const shop = config.SOURCE_SHOP
   const all: Collection[] = []
   let cursor: string | undefined
 

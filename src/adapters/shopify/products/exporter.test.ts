@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Product } from '../../types/shopify'
+import type { Product } from '#types/shopify'
 
-vi.mock('../../utils/config.js', () => ({
-  config: { PROD_SHOP: 'prod.myshopify.com', DATA_DIR: './data' },
+vi.mock('#utils/config', () => ({
+  config: { SOURCE_SHOP: 'prod.myshopify.com', DATA_DIR: './data' },
 }))
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('#utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), success: vi.fn() },
 }))
 
 const graphql = vi.hoisted(() => vi.fn())
-vi.mock('../../utils/shopifyClient.js', () => ({ shopifyClient: { graphql } }))
+vi.mock('#utils/shopifyClient', () => ({ shopifyClient: { graphql } }))
 
 const outputJson = vi.hoisted(() => vi.fn())
 vi.mock('fs-extra', () => ({ outputJson }))

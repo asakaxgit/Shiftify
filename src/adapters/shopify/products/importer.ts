@@ -1,11 +1,11 @@
 import path from 'node:path'
 import { outputJson, readJson } from 'fs-extra'
 import pLimit from 'p-limit'
-import { ProductSetDocument, type ProductSetInput, type WeightUnit } from '../../gql/graphql'
-import type { Product, ProductVariant } from '../../types/shopify'
-import { config } from '../../utils/config'
-import { logger } from '../../utils/logger'
-import { shopifyClient } from '../../utils/shopifyClient'
+import { ProductSetDocument, type ProductSetInput, type WeightUnit } from '#gql/graphql'
+import type { Product, ProductVariant } from '#types/shopify'
+import { config } from '#utils/config'
+import { logger } from '#utils/logger'
+import { shopifyClient } from '#utils/shopifyClient'
 
 export const buildVariantInput = (variant: ProductVariant) => {
   const weight = variant.inventoryItem.measurement?.weight
@@ -44,7 +44,7 @@ const buildProductInput = (product: Product): ProductSetInput => {
 }
 
 export const importProducts = async (): Promise<void> => {
-  const shop = config.DEV_SHOP
+  const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'products.json')
   const products: Product[] = await readJson(dataPath)
   logger.info(`Importing ${products.length} products to ${shop}...`)

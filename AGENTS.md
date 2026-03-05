@@ -1,13 +1,13 @@
 # Shiftify — Agent Guide
 
-TypeScript CLI for migrating Shopify production store data (products, collections, metafield definitions) to a dev store.
+TypeScript CLI for migrating Shopify store data (products, collections, metafield definitions) from a **source** to a **destination**. Source can be a Shopify store (GraphQL) or a Matrixify-exported XLSX file. Destination is a Shopify store.
 
 ## Commands
 
 ```bash
 node --version                 # must be 18+  (.node-version = v24.13.0)
-npm run export                 # export from PROD_SHOP → data/
-npm run import                 # import to DEV_SHOP from data/
+npm run export                 # export from source → data/
+npm run import                 # import from data/ to destination store
 npm run export -- --only products --only collections --only metafield-definitions
 npm run export -- --skip collections    # inverse of --only; cannot combine with --only
 npm run import -- --only metafield-definitions
@@ -22,8 +22,19 @@ No build step — `tsx` runs TypeScript directly.
 
 ## Project Structure
 
+Adapters live under `src/adapters/` by system: each adapter handles source and/or destination for that system (e.g. Shopify = export + import, Matrixify = source-only XLSX normalizer). Future adapters (e.g. `csv`) would go here too.
+
 ```
 src/
+├── adapters/
+│   ├── shopify/            # source (GraphQL export) + destination (GraphQL import)
+│   │   ├── products/       # exporter.{ts,graphql,test.ts} + importer.{ts,graphql,test.ts}
+│   │   ├── collections/    # exporter + importer
+│   │   └── metafieldDefinitions/  # exporter + importer
+│   └── matrixify/          # source only: Matrixify XLSX → data/*.json normalizer
+│       ├── index.ts        # normalizeFromXlsx
+│       ├── products.ts     # Products sheet → products.json
+│       └── collections.ts # Smart/Custom Collections → collections.json
 ├── cli/
 │   ├── export.ts           # entry: npm run export
 │   └── import.ts           # entry: npm run import
@@ -32,15 +43,11 @@ src/
 │   └── index.ts            # re-exports
 ├── types/
 │   └── shopify.ts          # serialised JSON model types (Product, Collection, etc.)
-├── utils/
-│   ├── config.ts           # env vars via dotenv
-│   ├── logger.ts           # info / warn / error / success
-│   ├── shopifyClient.ts    # GraphQL fetch + adaptive throttle + 429 retry
-│   └── idMap.ts            # stub (not yet implemented)
-└── shopify/
-    ├── products/           # exporter.{ts,graphql,test.ts} + importer.{ts,graphql,test.ts}
-    ├── collections/        # exporter + importer
-    └── metafieldDefinitions/  # exporter + importer
+└── utils/
+    ├── config.ts           # env vars via dotenv
+    ├── logger.ts           # info / warn / error / success
+    ├── shopifyClient.ts    # GraphQL fetch + adaptive throttle + 429 retry
+    └── idMap.ts            # stub (not yet implemented)
 ```
 
 ```
@@ -53,6 +60,7 @@ codegen.ts              # graphql-codegen config (Shopify public schema proxy)
 
 ## Key Conventions
 
+- **Root path alias** — Use `#` for imports from project root: `#utils/config`, `#types/shopify`, `#adapters/shopify/...`. Configured in `tsconfig.json` (`paths`) and `package.json` (`imports`). Prefer these over relative `../` paths.
 - **No `.js` extensions** — `moduleResolution: "bundler"` in tsconfig; omit extensions on all relative imports
 - **Single quotes, no semicolons, 2-space indent, 100-char line width** (Biome)
 - **No build step** — `tsx` executes TypeScript directly; `tsc --noEmit` is type-check only
@@ -93,18 +101,27 @@ All interface-affecting PRs must review and update AGENTS.md accordingly.
 
 `shopifyClient.graphql(shop, document, vars?)` — accepts a `TypedDocumentNode` or a plain string (used in tests and integration helpers).
 
-- Shop must be `config.PROD_SHOP` or `config.DEV_SHOP`; unknown shops throw immediately
+- Shop must be `config.SOURCE_SHOP` or `config.DEST_SHOP`; unknown shops throw immediately
 - Per-shop leaky-bucket state tracks `extensions.cost.throttleStatus` from each response
 - Pre-request wait when projected available < 10% of max bucket
 - Retries up to 3× on HTTP 429 using `Retry-After` header
 
 ## Export → Import Flow
 
-1. `exportMetafieldDefinitions` → `data/metafield-definitions.json` (all owner types: PRODUCT, PRODUCT_VARIANT, COLLECTION, CUSTOMER, ORDER, PAGE, BLOG, ARTICLE, LOCATION, SHOP)
-2. `exportProducts` → `data/products.json` (all products with variants, options, images)
+**When source is Shopify** (`SOURCE_TYPE=shopify`):
+
+1. `exportMetafieldDefinitions` → `data/metafield-definitions.json` (all owner types)
+2. `exportProducts` → `data/products.json` (GraphQL from SOURCE_SHOP)
 3. `exportCollections` → `data/collections.json` (metadata + ruleSet; manual collections include `productHandles[]`)
-4. `importMetafieldDefinitions` → creates definitions on DEV (skips on `userErrors`, e.g. already exists)
-5. `importProducts` → creates products on DEV, writes `maps/product-id-map.json`
+
+**When source is Matrixify XLSX** (`SOURCE_TYPE=matrixify-xlsx`):
+
+1. Export reads the XLSX (path from `SOURCE_XLSX_PATH` or a file in `DATA_DIR`), normalizes the **Products** sheet to `data/products.json` and optionally **Smart Collections** / **Custom Collections** sheets to `data/collections.json`. Metafield definitions are not available from XLSX and are skipped.
+
+**Import** (same for both source types):
+
+4. `importMetafieldDefinitions` → creates definitions on destination (skips on `userErrors`, e.g. already exists)
+5. `importProducts` → creates products on destination, writes `maps/product-id-map.json`
 6. `importCollections` → loads map, creates collections, resolves manual membership via handle→GID lookup
 
 **Import order matters:** metafield-definitions → products → collections.
@@ -115,12 +132,15 @@ The CLI enforces this order automatically when all entities are imported togethe
 Copy `.env.example` to `.env` for normal operation:
 
 ```
-PROD_SHOP=your-prod.myshopify.com
-PROD_ACCESS_TOKEN=shpat_xxx
-DEV_SHOP=your-dev.myshopify.com
-DEV_ACCESS_TOKEN=shpat_xxx
+SOURCE_SHOP=your-source.myshopify.com
+SOURCE_ACCESS_TOKEN=shpat_xxx
+DEST_SHOP=your-dest.myshopify.com
+DEST_ACCESS_TOKEN=shpat_xxx
+SOURCE_TYPE=shopify              # shopify | matrixify-xlsx
+# When SOURCE_TYPE=matrixify-xlsx, path to XLSX (or leave empty to use a file in DATA_DIR):
+# SOURCE_XLSX_PATH=/path/to/Export.xlsx
 API_VERSION=2026-01
-SHOPIFY_PLAN=plus          # plus | standard  (affects bucket size: 2000 | 1000)
+SHOPIFY_PLAN=plus                # plus | standard  (affects bucket size: 2000 | 1000)
 BATCH_SIZE=250
 CONCURRENCY=10
 DATA_DIR=./data
@@ -129,7 +149,7 @@ MAPS_DIR=./maps
 
 ## Integration Tests
 
-Copy `.env.test.integration.example` to `.env.test.integration`. Set **both** `PROD_SHOP` and `DEV_SHOP` to the **same dev store** — the pipeline is:
+Copy `.env.test.integration.example` to `.env.test.integration`. Set **both** `SOURCE_SHOP` and `DEST_SHOP` to the **same dev store** — the pipeline is:
 
 ```
 truncate → seed → export → truncate → import → verify
@@ -150,3 +170,4 @@ SAFE_SHOP_PATTERN=dev                           # shop domain must contain this
 - Customers / Orders — deferred to Phase 2 (PII masking required)
 - Bulk Operations — Phase 1 uses regular GraphQL; bulk ops for 25k+ products later
 - Metafields — not included in export/import queries
+- Matrixify XLSX: location-specific columns (e.g. price per market, inventory per location) are ignored; only core product/variant/collection columns are normalized

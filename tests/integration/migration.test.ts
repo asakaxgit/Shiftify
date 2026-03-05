@@ -1,12 +1,12 @@
 import { rm } from 'node:fs/promises'
 import { readJson } from 'fs-extra'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { exportCollections } from '../../src/exporters/shopify/collections'
-import { exportProducts } from '../../src/exporters/shopify/products'
-import { importCollections } from '../../src/importers/shopify/collections'
-import { importProducts } from '../../src/importers/shopify/products'
-import type { Collection, Product } from '../../src/types/shopify'
-import { config } from '../../src/utils/config'
+import { exportCollections } from '#adapters/shopify/collections/exporter'
+import { exportProducts } from '#adapters/shopify/products/exporter'
+import { importCollections } from '#adapters/shopify/collections/importer'
+import { importProducts } from '#adapters/shopify/products/importer'
+import type { Collection, Product } from '#types/shopify'
+import { config } from '#utils/config'
 import {
   type CollectionSummary,
   type ProductSummary,
@@ -18,7 +18,7 @@ import {
 } from './helpers'
 
 const PREFIX = `test-shiftify-${Date.now()}`
-const SHOP = config.PROD_SHOP // same as DEV_SHOP for integration tests
+const SHOP = config.SOURCE_SHOP // same as DEST_SHOP for integration tests
 
 // Shared state across tests (set in beforeAll)
 let seededProducts: Array<{ id: string; handle: string }> = []
@@ -84,7 +84,7 @@ describe('migration integrity', () => {
     expect(Object.keys(map)).toContain(`${PREFIX}-hat`)
   })
 
-  it('DEV_SHOP has both collections, smart ruleSet preserved, manual has 2 products', async () => {
+  it('DEST_SHOP has both collections, smart ruleSet preserved, manual has 2 products', async () => {
     const cols: CollectionSummary[] = await queryCollections(SHOP, PREFIX)
     expect(cols).toHaveLength(2)
 

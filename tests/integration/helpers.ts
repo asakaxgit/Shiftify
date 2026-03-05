@@ -1,5 +1,5 @@
 import pLimit from 'p-limit'
-import { shopifyClient } from '../../src/utils/shopifyClient'
+import { shopifyClient } from '#utils/shopifyClient'
 
 // ─── Safety gate ─────────────────────────────────────────────────────────────
 

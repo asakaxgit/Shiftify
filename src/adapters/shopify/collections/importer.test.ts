@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Collection } from '../../types/shopify'
+import type { Collection } from '#types/shopify'
 
-vi.mock('../../utils/config.js', () => ({
-  config: { DEV_SHOP: 'dev.myshopify.com', DATA_DIR: './data', MAPS_DIR: './maps' },
+vi.mock('#utils/config', () => ({
+  config: { DEST_SHOP: 'dev.myshopify.com', DATA_DIR: './data', MAPS_DIR: './maps' },
 }))
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('#utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), success: vi.fn() },
 }))
 
 const graphql = vi.hoisted(() => vi.fn())
-vi.mock('../../utils/shopifyClient.js', () => ({ shopifyClient: { graphql } }))
+vi.mock('#utils/shopifyClient', () => ({ shopifyClient: { graphql } }))
 
 const readJson = vi.hoisted(() => vi.fn())
 const pathExists = vi.hoisted(() => vi.fn())
@@ -81,7 +81,7 @@ describe('importCollections', () => {
   })
 
   it('warns and skips product membership when id map is missing', async () => {
-    const { logger } = await import('../../utils/logger')
+    const { logger } = await import('#utils/logger')
     readJson.mockResolvedValue([manualCol])
     pathExists.mockResolvedValue(false)
     graphql.mockResolvedValue(createOk('gid://shopify/Collection/99', 'manual-col'))

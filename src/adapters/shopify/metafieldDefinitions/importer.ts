@@ -1,14 +1,17 @@
 import path from 'node:path'
 import { readJson } from 'fs-extra'
 import pLimit from 'p-limit'
-import { MetafieldDefinitionCreateDocument } from '../../gql/graphql'
-import type { MetafieldDefinition } from '../../types/shopify'
-import { config } from '../../utils/config'
-import { logger } from '../../utils/logger'
-import { shopifyClient } from '../../utils/shopifyClient'
+import { MetafieldDefinitionCreateDocument, MetafieldOwnerType } from '#gql/graphql'
+import type { MetafieldDefinition } from '#types/shopify'
+import { config } from '#utils/config'
+import { logger } from '#utils/logger'
+import { shopifyClient } from '#utils/shopifyClient'
+
+const VALID_OWNER_TYPES: readonly string[] = Object.values(MetafieldOwnerType)
+const isMetafieldOwnerType = (s: string): s is MetafieldOwnerType => VALID_OWNER_TYPES.includes(s)
 
 export const importMetafieldDefinitions = async (): Promise<void> => {
-  const shop = config.DEV_SHOP
+  const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'metafield-definitions.json')
   const definitions: MetafieldDefinition[] = await readJson(dataPath)
   logger.info(`Importing ${definitions.length} metafield definitions to ${shop}...`)
@@ -21,6 +24,13 @@ export const importMetafieldDefinitions = async (): Promise<void> => {
     definitions.map((def) =>
       limit(async () => {
         try {
+          if (!isMetafieldOwnerType(def.ownerType)) {
+            logger.warn(
+              `  [skip] invalid ownerType "${def.ownerType}" for ${def.namespace}.${def.key}`,
+            )
+            errors++
+            return
+          }
           const result = await shopifyClient.graphql(shop, MetafieldDefinitionCreateDocument, {
             definition: {
               name: def.name,

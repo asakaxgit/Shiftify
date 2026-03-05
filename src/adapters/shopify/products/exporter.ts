@@ -1,15 +1,15 @@
 import path from 'node:path'
 import { outputJson } from 'fs-extra'
-import { ExportProductsDocument, type ExportProductsQuery } from '../../gql/graphql'
-import { config } from '../../utils/config'
-import { logger } from '../../utils/logger'
-import { shopifyClient } from '../../utils/shopifyClient'
+import { ExportProductsDocument, type ExportProductsQuery } from '#gql/graphql'
+import { config } from '#utils/config'
+import { logger } from '#utils/logger'
+import { shopifyClient } from '#utils/shopifyClient'
 
 type ProductNode = ExportProductsQuery['products']['nodes'][number]
 
 export const exportProducts = async (): Promise<void> => {
   logger.info('Exporting products...')
-  const shop = config.PROD_SHOP
+  const shop = config.SOURCE_SHOP
   const all: ProductNode[] = []
   let cursor: string | undefined
 

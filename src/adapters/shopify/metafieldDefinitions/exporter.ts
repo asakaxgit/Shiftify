@@ -1,10 +1,10 @@
 import path from 'node:path'
 import { outputJson } from 'fs-extra'
-import { ExportMetafieldDefinitionsDocument, MetafieldOwnerType } from '../../gql/graphql'
-import type { MetafieldDefinition } from '../../types/shopify'
-import { config } from '../../utils/config'
-import { logger } from '../../utils/logger'
-import { shopifyClient } from '../../utils/shopifyClient'
+import { ExportMetafieldDefinitionsDocument, MetafieldOwnerType } from '#gql/graphql'
+import type { MetafieldDefinition } from '#types/shopify'
+import { config } from '#utils/config'
+import { logger } from '#utils/logger'
+import { shopifyClient } from '#utils/shopifyClient'
 
 const OWNER_TYPES = [
   MetafieldOwnerType.Product,
@@ -21,7 +21,7 @@ const OWNER_TYPES = [
 
 export const exportMetafieldDefinitions = async (): Promise<void> => {
   logger.info('Exporting metafield definitions...')
-  const shop = config.PROD_SHOP
+  const shop = config.SOURCE_SHOP
   const all: MetafieldDefinition[] = []
 
   for (const ownerType of OWNER_TYPES) {

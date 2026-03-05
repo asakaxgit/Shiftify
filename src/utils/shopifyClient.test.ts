@@ -1,18 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { BucketState } from './shopifyClient'
-import { projectAvailable, shopifyClient } from './shopifyClient'
+import type { BucketState } from '#utils/shopifyClient'
+import { projectAvailable, shopifyClient } from '#utils/shopifyClient'
 
-vi.mock('./config.js', () => ({
+vi.mock('#utils/config', () => ({
   config: {
-    PROD_SHOP: 'prod.myshopify.com',
-    DEV_SHOP: 'dev.myshopify.com',
-    PROD_ACCESS_TOKEN: 'tok-prod',
-    DEV_ACCESS_TOKEN: 'tok-dev',
+    SOURCE_SHOP: 'prod.myshopify.com',
+    DEST_SHOP: 'dev.myshopify.com',
+    SOURCE_ACCESS_TOKEN: 'tok-prod',
+    DEST_ACCESS_TOKEN: 'tok-dev',
     API_VERSION: '2024-01',
     SHOPIFY_PLAN: 'standard',
   },
 }))
-vi.mock('./logger.js', () => ({
+vi.mock('#utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), success: vi.fn() },
 }))
 

@@ -1,5 +1,5 @@
 import minimist from 'minimist'
-import { logger } from '../utils/logger'
+import { logger } from '#utils/logger'
 
 export type Entity = 'products' | 'collections' | 'metafield-definitions'
 export const VALID_ENTITIES: readonly Entity[] = [

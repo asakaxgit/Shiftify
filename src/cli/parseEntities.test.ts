@@ -5,7 +5,7 @@ const mockExit = vi.spyOn(process, 'exit').mockImplementation((_code) => {
   throw new Error('process.exit')
 })
 
-vi.mock('../utils/logger', () => ({
+vi.mock('#utils/logger', () => ({
   logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), success: vi.fn() },
 }))
 

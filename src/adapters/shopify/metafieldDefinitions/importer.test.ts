@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { MetafieldDefinition } from '../../types/shopify'
+import type { MetafieldDefinition } from '#types/shopify'
 
-vi.mock('../../utils/config.js', () => ({
-  config: { DEV_SHOP: 'dev.myshopify.com', CONCURRENCY: 5, DATA_DIR: './data' },
+vi.mock('#utils/config', () => ({
+  config: { DEST_SHOP: 'dev.myshopify.com', CONCURRENCY: 5, DATA_DIR: './data' },
 }))
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('#utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), success: vi.fn() },
 }))
 vi.mock('p-limit', () => ({ default: () => (fn: () => unknown) => fn() }))
 
 const graphql = vi.hoisted(() => vi.fn())
-vi.mock('../../utils/shopifyClient.js', () => ({ shopifyClient: { graphql } }))
+vi.mock('#utils/shopifyClient', () => ({ shopifyClient: { graphql } }))
 
 const readJson = vi.hoisted(() => vi.fn())
 vi.mock('fs-extra', () => ({ readJson }))

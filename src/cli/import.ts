@@ -1,7 +1,7 @@
-import { importCollections } from '../shopify/collections/importer'
-import { importMetafieldDefinitions } from '../shopify/metafieldDefinitions/importer'
-import { importProducts } from '../shopify/products/importer'
-import { logger } from '../utils/logger'
+import { importCollections } from '#adapters/shopify/collections/importer'
+import { importMetafieldDefinitions } from '#adapters/shopify/metafieldDefinitions/importer'
+import { importProducts } from '#adapters/shopify/products/importer'
+import { logger } from '#utils/logger'
 import { parseEntities } from './parseEntities'
 
 const main = async () => {
