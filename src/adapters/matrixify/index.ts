@@ -1,11 +1,9 @@
-import path from 'node:path'
-import { config } from '#utils/config'
 import { logger } from '#utils/logger'
+import { resolveXlsxPath } from './manager'
 import { exportCollectionsFromMatrixifyXlsx } from './collections'
 import { exportProductsFromMatrixifyXlsx } from './products'
 
-export const resolveXlsxPath = (): string =>
-  config.SOURCE_XLSX_PATH || path.resolve(config.DATA_DIR, 'export.xlsx')
+export { resolveXlsxPath } from './manager'
 
 export const normalizeFromXlsx = async (options: {
   products?: boolean
