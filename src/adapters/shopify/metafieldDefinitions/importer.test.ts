@@ -13,7 +13,7 @@ const graphql = vi.hoisted(() => vi.fn())
 vi.mock('#utils/shopifyClient', () => ({ shopifyClient: { graphql } }))
 
 const readJson = vi.hoisted(() => vi.fn())
-vi.mock('fs-extra', () => ({ readJson }))
+vi.mock('fs-extra', () => ({ default: { readJson } }))
 
 import { importMetafieldDefinitions } from './importer'
 

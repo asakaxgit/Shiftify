@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { outputJson } from 'fs-extra'
+import fs from 'fs-extra'
 import { ExportMetafieldDefinitionsDocument, MetafieldOwnerType } from '#gql/graphql'
 import type { MetafieldDefinition } from '#types/shopify'
 import { config } from '#utils/config'
@@ -54,6 +54,6 @@ export const exportMetafieldDefinitions = async (): Promise<void> => {
   }
 
   const outPath = path.join(config.DATA_DIR, 'metafield-definitions.json')
-  await outputJson(outPath, all, { spaces: 2 })
+  await fs.outputJson(outPath, all, { spaces: 2 })
   logger.success(`Exported ${all.length} metafield definitions → ${outPath}`)
 }

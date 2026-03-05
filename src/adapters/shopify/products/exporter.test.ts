@@ -12,7 +12,7 @@ const graphql = vi.hoisted(() => vi.fn())
 vi.mock('#utils/shopifyClient', () => ({ shopifyClient: { graphql } }))
 
 const outputJson = vi.hoisted(() => vi.fn())
-vi.mock('fs-extra', () => ({ outputJson }))
+vi.mock('fs-extra', () => ({ default: { outputJson } }))
 
 import { exportProducts } from './exporter'
 

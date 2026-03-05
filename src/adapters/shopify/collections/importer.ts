@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { pathExists, readJson } from 'fs-extra'
+import fs from 'fs-extra'
 import { CollectionAddProductsDocument, CollectionCreateDocument } from '#gql/graphql'
 import type { Collection } from '#types/shopify'
 import { config } from '#utils/config'
@@ -11,6 +11,9 @@ const chunk = <T>(arr: T[], size: number): T[][] => {
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
   return out
 }
+
+/** Normalize display enum (e.g. "Manual", "Vendor") to GraphQL enum (MANUAL, VENDOR). */
+const toGraphQLEnum = (s: string): string => s.toUpperCase().replace(/\s+/g, '_')
 
 const addProducts = async (
   shop: string,
@@ -42,13 +45,13 @@ export const importCollections = async (): Promise<void> => {
   const dataPath = path.join(config.DATA_DIR, 'collections.json')
   const mapPath = path.join(config.MAPS_DIR, 'product-id-map.json')
 
-  const collections: Collection[] = await readJson(dataPath)
+  const collections: Collection[] = await fs.readJson(dataPath)
   logger.info(`Importing ${collections.length} collections to ${shop}...`)
 
   // Load handle→id map written by importProducts
   let handleToId: Record<string, string> = {}
-  if (await pathExists(mapPath)) {
-    handleToId = await readJson(mapPath)
+  if (await fs.pathExists(mapPath)) {
+    handleToId = await fs.readJson(mapPath)
   } else {
     logger.warn('product-id-map.json not found — manual collection membership will be skipped')
   }

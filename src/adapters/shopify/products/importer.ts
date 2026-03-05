@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { outputJson, readJson } from 'fs-extra'
+import fs from 'fs-extra'
 import pLimit from 'p-limit'
 import { ProductSetDocument, type ProductSetInput, type WeightUnit } from '#gql/graphql'
 import type { Product, ProductVariant } from '#types/shopify'
@@ -46,7 +46,7 @@ const buildProductInput = (product: Product): ProductSetInput => {
 export const importProducts = async (): Promise<void> => {
   const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'products.json')
-  const products: Product[] = await readJson(dataPath)
+  const products: Product[] = await fs.readJson(dataPath)
   logger.info(`Importing ${products.length} products to ${shop}...`)
 
   const handleToId: Record<string, string> = {}
@@ -90,7 +90,7 @@ export const importProducts = async (): Promise<void> => {
   )
 
   const mapPath = path.join(config.MAPS_DIR, 'product-id-map.json')
-  await outputJson(mapPath, handleToId, { spaces: 2 })
+  await fs.outputJson(mapPath, handleToId, { spaces: 2 })
   logger.success(
     `Imported ${Object.keys(handleToId).length}/${products.length} products (${errors} errors) → ${mapPath}`,
   )

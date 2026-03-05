@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { outputJson } from 'fs-extra'
+import fs from 'fs-extra'
 import { ExportProductsDocument, type ExportProductsQuery } from '#gql/graphql'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
@@ -22,6 +22,6 @@ export const exportProducts = async (): Promise<void> => {
   } while (cursor)
 
   const outPath = path.join(config.DATA_DIR, 'products.json')
-  await outputJson(outPath, all, { spaces: 2 })
+  await fs.outputJson(outPath, all, { spaces: 2 })
   logger.success(`Exported ${all.length} products → ${outPath}`)
 }

@@ -19,7 +19,7 @@ vi.mock('#utils/shopifyClient', () => ({ shopifyClient: { graphql } }))
 
 const readJson = vi.hoisted(() => vi.fn())
 const outputJson = vi.hoisted(() => vi.fn())
-vi.mock('fs-extra', () => ({ readJson, outputJson }))
+vi.mock('fs-extra', () => ({ default: { readJson, outputJson } }))
 
 import { buildVariantInput, importProducts } from './importer'
 

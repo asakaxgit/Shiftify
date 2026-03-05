@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { outputJson } from 'fs-extra'
+import fs from 'fs-extra'
 import * as XLSX from 'xlsx'
 import type { Collection, CollectionRuleSet } from '#types/shopify'
 import { config } from '#utils/config'
@@ -108,7 +108,8 @@ const parseCustomCollections = (workbook: XLSX.WorkBook): Collection[] => {
 }
 
 export const normalizeCollectionsFromXlsx = (xlsxPath: string): Collection[] => {
-  const workbook = XLSX.readFile(xlsxPath, { type: 'file' })
+  const buf = fs.readFileSync(xlsxPath)
+  const workbook = XLSX.read(buf, { type: 'buffer' })
   const smart = parseSmartCollections(workbook)
   const custom = parseCustomCollections(workbook)
   return [...smart, ...custom]
@@ -118,6 +119,6 @@ export const exportCollectionsFromMatrixifyXlsx = async (xlsxPath: string): Prom
   const collections = normalizeCollectionsFromXlsx(xlsxPath)
   logger.info(`Parsed ${collections.length} collections from Matrixify XLSX`)
   const outPath = path.join(config.DATA_DIR, 'collections.json')
-  await outputJson(outPath, collections, { spaces: 2 })
+  await fs.outputJson(outPath, collections, { spaces: 2 })
   logger.success(`Exported ${collections.length} collections → ${outPath}`)
 }

@@ -5,7 +5,7 @@ import { exportCollectionsFromMatrixifyXlsx } from './collections'
 import { exportProductsFromMatrixifyXlsx } from './products'
 
 export const resolveXlsxPath = (): string =>
-  config.SOURCE_XLSX_PATH || path.join(config.DATA_DIR, 'export.xlsx')
+  config.SOURCE_XLSX_PATH || path.resolve(config.DATA_DIR, 'export.xlsx')
 
 export const normalizeFromXlsx = async (options: {
   products?: boolean

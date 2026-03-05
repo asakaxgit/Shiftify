@@ -1,5 +1,5 @@
 import { rm } from 'node:fs/promises'
-import { readJson } from 'fs-extra'
+import fs from 'fs-extra'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { exportCollections } from '#adapters/shopify/collections/exporter'
 import { exportProducts } from '#adapters/shopify/products/exporter'
@@ -44,8 +44,8 @@ describe('migration integrity', () => {
     await exportProducts()
     await exportCollections()
 
-    exportedProducts = await readJson(`${config.DATA_DIR}/products.json`)
-    exportedCollections = await readJson(`${config.DATA_DIR}/collections.json`)
+    exportedProducts = await fs.readJson(`${config.DATA_DIR}/products.json`)
+    exportedCollections = await fs.readJson(`${config.DATA_DIR}/collections.json`)
 
     // Step 4: truncate again — remove seeded data
     await truncateShop(SHOP)
@@ -78,7 +78,7 @@ describe('migration integrity', () => {
   // ── Import assertions ──────────────────────────────────────────────────────
 
   it('maps/product-id-map.json contains all 3 seeded handles', async () => {
-    const map: Record<string, string> = await readJson(`${config.MAPS_DIR}/product-id-map.json`)
+    const map: Record<string, string> = await fs.readJson(`${config.MAPS_DIR}/product-id-map.json`)
     expect(Object.keys(map)).toContain(`${PREFIX}-tshirt`)
     expect(Object.keys(map)).toContain(`${PREFIX}-mug`)
     expect(Object.keys(map)).toContain(`${PREFIX}-hat`)

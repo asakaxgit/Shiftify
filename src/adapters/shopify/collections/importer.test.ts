@@ -13,7 +13,7 @@ vi.mock('#utils/shopifyClient', () => ({ shopifyClient: { graphql } }))
 
 const readJson = vi.hoisted(() => vi.fn())
 const pathExists = vi.hoisted(() => vi.fn())
-vi.mock('fs-extra', () => ({ readJson, pathExists }))
+vi.mock('fs-extra', () => ({ default: { readJson, pathExists } }))
 
 import { importCollections } from './importer'
 

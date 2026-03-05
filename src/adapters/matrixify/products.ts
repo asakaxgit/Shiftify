@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { outputJson } from 'fs-extra'
+import fs from 'fs-extra'
 import * as XLSX from 'xlsx'
 import type { Product, ProductImage, ProductOption, ProductVariant } from '#types/shopify'
 import { config } from '#utils/config'
@@ -150,7 +150,8 @@ const parseProductsSheet = (workbook: XLSX.WorkBook): Product[] => {
 }
 
 export const normalizeProductsFromXlsx = async (xlsxPath: string): Promise<Product[]> => {
-  const workbook = XLSX.readFile(xlsxPath, { type: 'file' })
+  const buf = await fs.readFile(xlsxPath)
+  const workbook = XLSX.read(buf, { type: 'buffer' })
   const products = parseProductsSheet(workbook)
   logger.info(`Parsed ${products.length} products from Matrixify XLSX`)
   return products
@@ -160,6 +161,6 @@ export const exportProductsFromMatrixifyXlsx = async (xlsxPath?: string): Promis
   const resolved = xlsxPath || config.SOURCE_XLSX_PATH || path.join(config.DATA_DIR, 'export.xlsx')
   const products = await normalizeProductsFromXlsx(resolved)
   const outPath = path.join(config.DATA_DIR, 'products.json')
-  await outputJson(outPath, products, { spaces: 2 })
+  await fs.outputJson(outPath, products, { spaces: 2 })
   logger.success(`Exported ${products.length} products → ${outPath}`)
 }

@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { outputJson } from 'fs-extra'
+import fs from 'fs-extra'
 import { CollectionProductsDocument, ExportCollectionsDocument } from '#gql/graphql'
 import type { Collection } from '#types/shopify'
 import { config } from '#utils/config'
@@ -55,6 +55,6 @@ export const exportCollections = async (): Promise<void> => {
   }
 
   const outPath = path.join(config.DATA_DIR, 'collections.json')
-  await outputJson(outPath, all, { spaces: 2 })
+  await fs.outputJson(outPath, all, { spaces: 2 })
   logger.success(`Exported ${all.length} collections → ${outPath}`)
 }

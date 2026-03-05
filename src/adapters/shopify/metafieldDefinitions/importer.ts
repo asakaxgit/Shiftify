@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { readJson } from 'fs-extra'
+import fs from 'fs-extra'
 import pLimit from 'p-limit'
 import { MetafieldDefinitionCreateDocument, MetafieldOwnerType } from '#gql/graphql'
 import type { MetafieldDefinition } from '#types/shopify'
@@ -13,7 +13,7 @@ const isMetafieldOwnerType = (s: string): s is MetafieldOwnerType => VALID_OWNER
 export const importMetafieldDefinitions = async (): Promise<void> => {
   const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'metafield-definitions.json')
-  const definitions: MetafieldDefinition[] = await readJson(dataPath)
+  const definitions: MetafieldDefinition[] = await fs.readJson(dataPath)
   logger.info(`Importing ${definitions.length} metafield definitions to ${shop}...`)
 
   const limit = pLimit(config.CONCURRENCY)
