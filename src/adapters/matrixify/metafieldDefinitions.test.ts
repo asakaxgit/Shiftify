@@ -103,6 +103,39 @@ describe('inferFromWorkbook', () => {
     expect(defs[0].namespace).toBe('my.ns')
     expect(defs[0].key).toBe('my.key')
   })
+
+  it('parses alternate format "Label (product.metafields.namespace.key)" without type', () => {
+    const wb = buildWorkbook([
+      'Handle',
+      'Exclude from search (product.metafields.custom.exclude_from_search)',
+      'Estimated shipping (product.metafields.myapp.estimated_shipping)',
+    ])
+    const defs = inferFromWorkbook(wb)
+    expect(defs).toHaveLength(2)
+    const exclude = defs.find((d) => d.key === 'exclude_from_search')
+    expect(exclude).toEqual({
+      name: 'Exclude from search',
+      namespace: 'custom',
+      key: 'exclude_from_search',
+      description: null,
+      type: 'single_line_text_field',
+      ownerType: 'PRODUCT',
+      pinnedPosition: null,
+      validations: [],
+    })
+    const shipping = defs.find((d) => d.key === 'estimated_shipping')
+    expect(shipping?.namespace).toBe('myapp')
+    expect(shipping?.name).toBe('Estimated shipping')
+  })
+
+  it('excludes shopify-- built-in namespaces (e.g. discovery, product_recommendation)', () => {
+    const wb = buildWorkbook([
+      'Related (product.metafields.shopify--discovery--product_recommendation.related_products)',
+      'Boost (product.metafields.shopify--discovery--product_search_boost.queries)',
+    ])
+    const defs = inferFromWorkbook(wb)
+    expect(defs).toHaveLength(0)
+  })
 })
 
 describe('exportMetafieldDefinitionsFromMatrixifyXlsx', () => {

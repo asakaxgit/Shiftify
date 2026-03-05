@@ -7,12 +7,22 @@ import { logger } from '#utils/logger'
 
 const PRODUCT_METAFIELD_RE = /^Metafield:\s*(.+?)\.(.+?)\s*\[([^\]]+)\]$/
 const VARIANT_METAFIELD_RE = /^Variant Metafield:\s*(.+?)\.(.+?)\s*\[([^\]]+)\]$/
+/** Alternate Matrixify format: "Label (product.metafields.namespace.key)" — type not in header, defaulted. */
+const ALT_METAFIELD_RE = /^(.+?)\s*\((product|product_variant|collection)\.metafields\.([^.]+)\.([^)]+)\)$/
 
 const OWNER_PRODUCT = 'PRODUCT'
 const OWNER_PRODUCT_VARIANT = 'PRODUCTVARIANT'
 const OWNER_COLLECTION = 'COLLECTION'
 
+const DEFAULT_METAFIELD_TYPE = 'single_line_text_field'
+
+/** Shopify built-in namespaces (e.g. discovery, recommendations) — not custom metafield definitions. */
+const BUILTIN_NAMESPACE_PREFIX = 'shopify--'
+
 const unescapeDots = (s: string): string => s.replace(/\\\./g, '.')
+
+const isBuiltinNamespace = (namespace: string): boolean =>
+  namespace.startsWith(BUILTIN_NAMESPACE_PREFIX)
 
 const humanName = (namespace: string, key: string): string => key || `${namespace}_field`
 
@@ -31,6 +41,13 @@ type InferredDef = {
   key: string
   type: string
   ownerType: string
+  name?: string
+}
+
+const OWNER_MAP: Record<string, string> = {
+  product: OWNER_PRODUCT,
+  product_variant: OWNER_PRODUCT_VARIANT,
+  collection: OWNER_COLLECTION,
 }
 
 const parseHeadersForOwner = (headers: string[], ownerType: string): InferredDef[] => {
@@ -53,17 +70,42 @@ const parseHeadersForOwner = (headers: string[], ownerType: string): InferredDef
   return defs
 }
 
+/** Parse "Label (owner.metafields.namespace.key)" style headers; type defaulted. */
+const parseHeadersAlt = (headers: string[]): InferredDef[] => {
+  const defs: InferredDef[] = []
+  for (const header of headers) {
+    const s = String(header).trim()
+    const m = s.match(ALT_METAFIELD_RE)
+    if (!m) continue
+    const [, label, owner, namespace, key] = m
+    if (!owner || !namespace || !key) continue
+    const ownerType = OWNER_MAP[owner]
+    if (!ownerType) continue
+    const ns = unescapeDots(namespace.trim())
+    const k = unescapeDots(key.trim())
+    defs.push({
+      namespace: ns,
+      key: k,
+      type: DEFAULT_METAFIELD_TYPE,
+      ownerType,
+      name: (label && String(label).trim()) || humanName(ns, k),
+    })
+  }
+  return defs
+}
+
 /** Exported for unit tests. Infers metafield definitions from column headers in Products and Collections sheets. */
 export const inferFromWorkbook = (workbook: XLSX.WorkBook): MetafieldDefinition[] => {
   const seen = new Set<string>()
   const result: MetafieldDefinition[] = []
 
   const add = (def: InferredDef) => {
+    if (isBuiltinNamespace(def.namespace)) return
     const dedupeKey = `${def.ownerType}:${def.namespace}:${def.key}`
     if (seen.has(dedupeKey)) return
     seen.add(dedupeKey)
     result.push({
-      name: humanName(def.namespace, def.key),
+      name: def.name ?? humanName(def.namespace, def.key),
       namespace: def.namespace,
       key: def.key,
       description: null,
@@ -79,18 +121,21 @@ export const inferFromWorkbook = (workbook: XLSX.WorkBook): MetafieldDefinition[
     const headers = getHeadersFromSheet(productsSheet)
     for (const d of parseHeadersForOwner(headers, OWNER_PRODUCT)) add(d)
     for (const d of parseHeadersForOwner(headers, OWNER_PRODUCT_VARIANT)) add(d)
+    for (const d of parseHeadersAlt(headers)) add(d)
   }
 
   const smartSheet = workbook.Sheets['Smart Collections'] ?? workbook.Sheets['Smart Collection']
   if (smartSheet) {
     const headers = getHeadersFromSheet(smartSheet)
     for (const d of parseHeadersForOwner(headers, OWNER_COLLECTION)) add(d)
+    for (const d of parseHeadersAlt(headers)) add(d)
   }
 
   const customSheet = workbook.Sheets['Custom Collections'] ?? workbook.Sheets['Custom Collection']
   if (customSheet) {
     const headers = getHeadersFromSheet(customSheet)
     for (const d of parseHeadersForOwner(headers, OWNER_COLLECTION)) add(d)
+    for (const d of parseHeadersAlt(headers)) add(d)
   }
 
   return result

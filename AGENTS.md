@@ -36,7 +36,7 @@ src/
 │       ├── manager.ts      # getCandidates() = which sheets exist (used by CLI)
 │       ├── products.ts     # Products sheet → products.json
 │       ├── collections.ts  # Smart/Custom Collections → collections.json
-│       └── metafieldDefinitions.ts  # infer defs from Metafield: / Variant Metafield: column headers
+│       └── metafieldDefinitions.ts  # infer defs from Metafield:/Variant Metafield: or Label (owner.metafields.ns.key) headers
 ├── cli/
 │   ├── export.ts           # entry: npm run export
 │   ├── import.ts           # entry: npm run import
@@ -129,7 +129,7 @@ The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manag
 
 **When source is Matrixify XLSX** (`SOURCE_TYPE=matrixify-xlsx`):
 
-1. Export reads the XLSX (path from `SOURCE_XLSX_PATH` or a file in `DATA_DIR`), normalizes the **Products** sheet to `data/products.json`, optionally **Smart Collections** / **Custom Collections** to `data/collections.json`, and optionally **metafield definitions** to `data/metafield-definitions.json`. Metafield definitions are **inferred** from column headers: any column whose header matches `Metafield: namespace.key [type]` or `Variant Metafield: namespace.key [type]` in the Products sheet, or the same product-style pattern in Smart/Custom Collections sheets, becomes one definition (ownerType PRODUCT, PRODUCTVARIANT, or COLLECTION). **Limitations:** description, validations, and pinnedPosition are not available from headers and are set to `null`/`[]`; name is derived from the key.
+1. Export reads the XLSX (path from `SOURCE_XLSX_PATH` or a file in `DATA_DIR`), normalizes the **Products** sheet to `data/products.json`, optionally **Smart Collections** / **Custom Collections** to `data/collections.json`, and optionally **metafield definitions** to `data/metafield-definitions.json`. Metafield definitions are **inferred** from column headers. Two header formats are supported: (a) `Metafield: namespace.key [type]` / `Variant Metafield: namespace.key [type]`; (b) `Label (product.metafields.namespace.key)` or `(product_variant|collection).metafields.namespace.key` — for (b) the type is defaulted to `single_line_text_field` and the label is used as the definition name. Namespaces starting with `shopify--` (e.g. `shopify--discovery--product_recommendation`) are **excluded** as Shopify built-in fields, not custom metafields. **Limitations:** description, validations, and pinnedPosition are not available from headers and are set to `null`/`[]`.
 
 **Import** (same for both source types):
 
