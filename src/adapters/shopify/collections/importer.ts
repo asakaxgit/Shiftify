@@ -65,12 +65,23 @@ export const importCollections = async (): Promise<void> => {
         title: col.title,
         handle: col.handle,
         descriptionHtml: col.descriptionHtml,
-        sortOrder: col.sortOrder,
+        sortOrder: toGraphQLEnum(col.sortOrder),
         ...(col.templateSuffix ? { templateSuffix: col.templateSuffix } : {}),
         ...(col.image
           ? { image: { src: col.image.url, altText: col.image.altText ?? undefined } }
           : {}),
-        ...(col.ruleSet ? { ruleSet: col.ruleSet } : {}),
+        ...(col.ruleSet
+          ? {
+              ruleSet: {
+                appliedDisjunctively: col.ruleSet.appliedDisjunctively,
+                rules: col.ruleSet.rules.map((r) => ({
+                  column: toGraphQLEnum(r.column),
+                  relation: toGraphQLEnum(r.relation),
+                  condition: r.condition,
+                })),
+              },
+            }
+          : {}),
       }
 
       const result = await shopifyClient.graphql(shop, CollectionCreateDocument, { input })
