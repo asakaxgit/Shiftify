@@ -15,6 +15,13 @@ const chunk = <T>(arr: T[], size: number): T[][] => {
 /** Normalize display enum (e.g. "Manual", "Vendor") to GraphQL enum (MANUAL, VENDOR). */
 const toGraphQLEnum = (s: string): string => s.toUpperCase().replace(/\s+/g, '_')
 
+/** Map API/display sortOrder variants to CollectionSortOrder enum (e.g. CREATED_DESCENDING → CREATED_DESC). */
+const SORT_ORDER_ALIASES: Record<string, string> = {
+  CREATED_DESCENDING: 'CREATED_DESC',
+}
+const toSortOrder = (s: string): string =>
+  SORT_ORDER_ALIASES[toGraphQLEnum(s)] ?? toGraphQLEnum(s)
+
 const addProducts = async (
   shop: string,
   collectionId: string,
@@ -65,7 +72,7 @@ export const importCollections = async (): Promise<void> => {
         title: col.title,
         handle: col.handle,
         descriptionHtml: col.descriptionHtml,
-        sortOrder: toGraphQLEnum(col.sortOrder),
+        sortOrder: toSortOrder(col.sortOrder),
         ...(col.templateSuffix ? { templateSuffix: col.templateSuffix } : {}),
         ...(col.image
           ? { image: { src: col.image.url, altText: col.image.altText ?? undefined } }
