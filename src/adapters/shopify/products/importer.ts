@@ -1,7 +1,12 @@
 import path from 'node:path'
 import fs from 'fs-extra'
 import pLimit from 'p-limit'
-import { ProductSetDocument, type ProductSetInput, type WeightUnit } from '#gql/graphql'
+import {
+  ProductByIdentifierDocument,
+  ProductSetDocument,
+  type ProductSetInput,
+  type WeightUnit,
+} from '#gql/graphql'
 import type { Product, ProductVariant } from '#types/shopify'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
@@ -43,8 +48,17 @@ const buildProductInput = (product: Product): ProductSetInput => {
   } as unknown as ProductSetInput
 }
 
-export const importProducts = async (options?: { dryRun?: boolean }): Promise<void> => {
+const isHandleAlreadyTaken = (message: string): boolean => {
+  const m = message.toLowerCase()
+  return m.includes('handle') && (m.includes('taken') || m.includes('already') || m.includes('in use'))
+}
+
+export const importProducts = async (options?: {
+  dryRun?: boolean
+  override?: boolean
+}): Promise<void> => {
   const dryRun = options?.dryRun ?? false
+  const override = options?.override ?? false
   const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'products.json')
   const products: Product[] = await fs.readJson(dataPath)
@@ -61,9 +75,19 @@ export const importProducts = async (options?: { dryRun?: boolean }): Promise<vo
   }
 
   const handleToId: Record<string, string> = {}
+  const existingIdByHandle = new Map<string, string | null>()
   const limit = pLimit(config.CONCURRENCY)
   let done = 0
   let errors = 0
+
+  const getExistingProductIdByHandle = async (handle: string): Promise<string | null> => {
+    const cached = existingIdByHandle.get(handle)
+    if (cached !== undefined) return cached
+    const result = await shopifyClient.graphql(shop, ProductByIdentifierDocument, { handle })
+    const existing = result.productByIdentifier?.id ?? null
+    existingIdByHandle.set(handle, existing)
+    return existing
+  }
 
   await Promise.all(
     products.map((product) =>
@@ -76,6 +100,41 @@ export const importProducts = async (options?: { dryRun?: boolean }): Promise<vo
           const { product: created, userErrors } = set
 
           if (userErrors.length) {
+            if (
+              override &&
+              userErrors.some((e) => isHandleAlreadyTaken(e.message)) &&
+              product.handle.trim().length > 0
+            ) {
+              const existingId = await getExistingProductIdByHandle(product.handle)
+              if (!existingId) {
+                const msg = userErrors
+                  .map((e) => `${(e.field ?? []).join('.')}: ${e.message}`)
+                  .join('; ')
+                logger.warn(`  [skip] ${product.handle}: ${msg} (override: no existing product found)`)
+                errors++
+                return
+              }
+
+              const retry = await shopifyClient.graphql(shop, ProductSetDocument, {
+                input: { ...input, id: existingId },
+              })
+              const retrySet = retry.productSet
+              if (!retrySet) return
+              const { product: updated, userErrors: retryErrors } = retrySet
+              if (retryErrors.length) {
+                const msg = retryErrors
+                  .map((e) => `${(e.field ?? []).join('.')}: ${e.message}`)
+                  .join('; ')
+                logger.warn(`  [skip] ${product.handle}: ${msg}`)
+                errors++
+                return
+              }
+              if (updated) {
+                handleToId[updated.handle] = updated.id
+              }
+              return
+            }
+
             const msg = userErrors
               .map((e) => `${(e.field ?? []).join('.')}: ${e.message}`)
               .join('; ')

@@ -11,6 +11,7 @@ npm run import                 # import from data/ to destination store
 npm run export -- --only products --only collections --only metafield-definitions
 npm run export -- --skip collections    # inverse of --only; cannot combine with --only
 npm run import -- --only metafield-definitions
+npm run import -- --override  # upsert by handle (update existing products on "handle already taken")
 npm run export -- --dry-run   # or -n: run reads, log what would be written, do not write files
 npm run import -- --dry-run   # or -n: read data/, log what would be created, no API mutations or file writes
 npm run test                   # vitest unit tests
@@ -144,6 +145,8 @@ The CLI enforces this order automatically when all entities are imported togethe
 
 **Dry-run** (`--dry-run` or `-n`): Export still runs all reads (GraphQL or XLSX) and logs what would be written; no files are written. Import reads `data/` and the product map if present, logs what would be created; no GraphQL mutations or file writes. Use for preview only.
 
+**Override / upsert** (`--override` on `npm run import`): When importing products, if Shopify returns a “handle already taken / in use” userError, Shiftify looks up the existing destination product by handle and retries as an update (using `productSet` with the existing product `id`). This allows re-running imports against a destination store without manually deleting products first.
+
 ## Environment
 
 Copy `.env.example` to `.env` for normal operation:
@@ -187,4 +190,4 @@ SAFE_SHOP_PATTERN=dev                           # shop domain must contain this
 - Customers / Orders — deferred to Phase 2 (PII masking required)
 - Bulk Operations — Phase 1 uses regular GraphQL; bulk ops for 25k+ products later
 - Metafields — not included in export/import queries
-- Matrixify XLSX: location-specific columns (e.g. price per market, inventory per location) are ignored; only core product/variant/collection columns are normalized
+- Matrixify XLSX: location-specific columns (e.g. price per market, inventory per location) are ignored; only core product/variant/collection columns are normalized. Rows with no option values (Option1/2/3) are filtered out during Products normalization so they do not become empty variants that would fail import.

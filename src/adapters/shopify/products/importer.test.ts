@@ -59,6 +59,9 @@ const setOk = (handle: string, id = 'gid://shopify/Product/99') => ({
 const setError = (message: string) => ({
   productSet: { product: null, userErrors: [{ field: ['handle'], message }] },
 })
+const lookupOk = (handle: string, id = 'gid://shopify/Product/123') => ({
+  productByIdentifier: { id, handle },
+})
 
 // ─── buildVariantInput ───────────────────────────────────────────────────────
 
@@ -142,6 +145,20 @@ describe('importProducts', () => {
     graphql.mockResolvedValue(setError('Handle already taken'))
     await importProducts()
     expect(Object.keys(outputJson.mock.calls[0][1])).toHaveLength(0)
+  })
+
+  it('override: retries productSet with existing id when handle is taken', async () => {
+    readJson.mockResolvedValue([product])
+    graphql
+      .mockResolvedValueOnce(setError('Handle already taken'))
+      .mockResolvedValueOnce(lookupOk('test-product', 'gid://shopify/Product/123'))
+      .mockResolvedValueOnce(setOk('test-product', 'gid://shopify/Product/123'))
+    await importProducts({ override: true })
+    expect(outputJson).toHaveBeenCalledWith(
+      expect.stringContaining('product-id-map.json'),
+      { 'test-product': 'gid://shopify/Product/123' },
+      { spaces: 2 },
+    )
   })
 
   it('catches a thrown graphql error and excludes the product from the map', async () => {

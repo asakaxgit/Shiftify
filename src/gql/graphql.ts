@@ -24707,7 +24707,7 @@ export enum InventoryAdjustQuantitiesUserErrorCode {
   AdjustQuantitiesFailed = 'ADJUST_QUANTITIES_FAILED',
   /** The changeFromQuantity argument no longer matches the persisted quantity. */
   ChangeFromQuantityStale = 'CHANGE_FROM_QUANTITY_STALE',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -25113,7 +25113,10 @@ export type InventoryLevel = Node & {
    * [name](https://shopify.dev/docs/apps/fulfillment/inventory-management-apps#inventory-states).
    */
   quantities: Array<InventoryQuantity>;
-  /** Scheduled changes for the requested quantity names. */
+  /**
+   * Scheduled changes for the requested quantity names.
+   * @deprecated Scheduled changes will be phased out in a future version.
+   */
   scheduledChanges: InventoryScheduledChangeConnection;
   /** The date and time when the inventory level was updated. */
   updatedAt: Scalars['DateTime']['output'];
@@ -25229,7 +25232,7 @@ export enum InventoryMoveQuantitiesUserErrorCode {
   ChangeFromQuantityStale = 'CHANGE_FROM_QUANTITY_STALE',
   /** The quantities can't be moved between different locations. */
   DifferentLocations = 'DIFFERENT_LOCATIONS',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -25527,7 +25530,7 @@ export enum InventorySetOnHandQuantitiesUserErrorCode {
   ChangeFromQuantityStale = 'CHANGE_FROM_QUANTITY_STALE',
   /** The compareQuantity value does not match persisted value. */
   CompareQuantityStale = 'COMPARE_QUANTITY_STALE',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -25613,7 +25616,7 @@ export enum InventorySetQuantitiesUserErrorCode {
   CompareQuantityRequired = 'COMPARE_QUANTITY_REQUIRED',
   /** The compareQuantity value does not match persisted value. */
   CompareQuantityStale = 'COMPARE_QUANTITY_STALE',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -25708,7 +25711,7 @@ export enum InventorySetScheduledChangesUserErrorCode {
   DuplicateToName = 'DUPLICATE_TO_NAME',
   /** There was an error updating the scheduled changes. */
   ErrorUpdatingScheduled = 'ERROR_UPDATING_SCHEDULED',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -25812,7 +25815,7 @@ export enum InventoryShipmentAddItemsUserErrorCode {
   ActivationFailed = 'ACTIVATION_FAILED',
   /** A single item can't be listed twice. */
   DuplicateItem = 'DUPLICATE_ITEM',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -25871,7 +25874,7 @@ export enum InventoryShipmentCreateInTransitUserErrorCode {
   DuplicateItem = 'DUPLICATE_ITEM',
   /** The shipment input cannot be empty. */
   EmptyShipmentInput = 'EMPTY_SHIPMENT_INPUT',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -25943,10 +25946,12 @@ export enum InventoryShipmentCreateUserErrorCode {
   DuplicateItem = 'DUPLICATE_ITEM',
   /** The shipment input cannot be empty. */
   EmptyShipmentInput = 'EMPTY_SHIPMENT_INPUT',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
+  /** The idempotency record was found but the associated scheduled changes no longer exist. */
+  IdempotencyRecordNotFound = 'IDEMPOTENCY_RECORD_NOT_FOUND',
   /** One or more items are not valid. */
   InvalidItem = 'INVALID_ITEM',
   /** The quantity is invalid. */
@@ -26131,7 +26136,7 @@ export type InventoryShipmentReceiveUserError = DisplayableError & {
 
 /** Possible error codes that can be returned by `InventoryShipmentReceiveUserError`. */
 export enum InventoryShipmentReceiveUserErrorCode {
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -26563,7 +26568,7 @@ export enum InventoryTransferCreateAsReadyToShipUserErrorCode {
   BundledItem = 'BUNDLED_ITEM',
   /** A single item can't be listed twice. */
   DuplicateItem = 'DUPLICATE_ITEM',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -26637,7 +26642,7 @@ export enum InventoryTransferCreateUserErrorCode {
   BundledItem = 'BUNDLED_ITEM',
   /** A single item can't be listed twice. */
   DuplicateItem = 'DUPLICATE_ITEM',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -26711,7 +26716,7 @@ export type InventoryTransferDuplicateUserError = DisplayableError & {
 
 /** Possible error codes that can be returned by `InventoryTransferDuplicateUserError`. */
 export enum InventoryTransferDuplicateUserErrorCode {
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -26972,7 +26977,7 @@ export enum InventoryTransferSetItemsUserErrorCode {
   BundledItem = 'BUNDLED_ITEM',
   /** A single item can't be listed twice. */
   DuplicateItem = 'DUPLICATE_ITEM',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -28238,7 +28243,7 @@ export enum LocationActivateUserErrorCode {
   HasNonUniqueName = 'HAS_NON_UNIQUE_NAME',
   /** This location currently cannot be activated as inventory, pending orders or transfers are being relocated from this location. */
   HasOngoingRelocation = 'HAS_ONGOING_RELOCATION',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -28428,7 +28433,7 @@ export enum LocationDeactivateUserErrorCode {
   HasIncomingMovementsError = 'HAS_INCOMING_MOVEMENTS_ERROR',
   /** Location could not be deactivated because it has open purchase orders. */
   HasOpenPurchaseOrdersError = 'HAS_OPEN_PURCHASE_ORDERS_ERROR',
-  /** This request is currently inprogress, please try again. */
+  /** This request is currently in progress, please try again. */
   IdempotencyConcurrentRequest = 'IDEMPOTENCY_CONCURRENT_REQUEST',
   /** The same idempotency key cannot be used with different operation parameters. */
   IdempotencyKeyParameterMismatch = 'IDEMPOTENCY_KEY_PARAMETER_MISMATCH',
@@ -59704,11 +59709,11 @@ export type ShippingLine = {
   /** Whether the shipping line has been removed. */
   isRemoved: Scalars['Boolean']['output'];
   /**
-   * The pre-tax shipping price without any discounts applied.
+   * The shipping price without any discounts applied. If the parent order.taxesIncluded field is true, then this price includes taxes. Otherwise, this field is the pre-tax price.
    * @deprecated Use `originalPriceSet` instead.
    */
   originalPrice: MoneyV2;
-  /** The pre-tax shipping price without any discounts applied. */
+  /** The shipping price without any discounts applied. If the parent order.taxesIncluded field is true, then this price includes taxes. Otherwise, this field is the pre-tax price. */
   originalPriceSet: MoneyBag;
   /** The phone number at the shipping address. */
   phone?: Maybe<Scalars['String']['output']>;
@@ -69162,6 +69167,13 @@ export type ProductSetMutationVariables = Exact<{
 
 export type ProductSetMutation = { __typename?: 'Mutation', productSet?: { __typename?: 'ProductSetPayload', product?: { __typename?: 'Product', id: string, handle: string } | null, userErrors: Array<{ __typename?: 'ProductSetUserError', field?: Array<string> | null, message: string }> } | null };
 
+export type ProductByIdentifierQueryVariables = Exact<{
+  handle: Scalars['String']['input'];
+}>;
+
+
+export type ProductByIdentifierQuery = { __typename?: 'QueryRoot', productByIdentifier?: { __typename?: 'Product', id: string, handle: string } | null };
+
 
 export const ExportCollectionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ExportCollections"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"collections"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"250"}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}},{"kind":"Field","name":{"kind":"Name","value":"endCursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"handle"}},{"kind":"Field","name":{"kind":"Name","value":"descriptionHtml"}},{"kind":"Field","name":{"kind":"Name","value":"sortOrder"}},{"kind":"Field","name":{"kind":"Name","value":"templateSuffix"}},{"kind":"Field","name":{"kind":"Name","value":"image"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"altText"}}]}},{"kind":"Field","name":{"kind":"Name","value":"ruleSet"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"appliedDisjunctively"}},{"kind":"Field","name":{"kind":"Name","value":"rules"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column"}},{"kind":"Field","name":{"kind":"Name","value":"relation"}},{"kind":"Field","name":{"kind":"Name","value":"condition"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<ExportCollectionsQuery, ExportCollectionsQueryVariables>;
 export const CollectionProductsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"CollectionProducts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"collection"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"products"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"250"}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}},{"kind":"Field","name":{"kind":"Name","value":"endCursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"handle"}}]}}]}}]}}]}}]} as unknown as DocumentNode<CollectionProductsQuery, CollectionProductsQueryVariables>;
@@ -69171,3 +69183,4 @@ export const ExportMetafieldDefinitionsDocument = {"kind":"Document","definition
 export const MetafieldDefinitionCreateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"MetafieldDefinitionCreate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"definition"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"MetafieldDefinitionInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"metafieldDefinitionCreate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"definition"},"value":{"kind":"Variable","name":{"kind":"Name","value":"definition"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createdDefinition"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"namespace"}},{"kind":"Field","name":{"kind":"Name","value":"key"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userErrors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}}]}}]}}]} as unknown as DocumentNode<MetafieldDefinitionCreateMutation, MetafieldDefinitionCreateMutationVariables>;
 export const ExportProductsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ExportProducts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"products"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"250"}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pageInfo"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hasNextPage"}},{"kind":"Field","name":{"kind":"Name","value":"endCursor"}}]}},{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"handle"}},{"kind":"Field","name":{"kind":"Name","value":"descriptionHtml"}},{"kind":"Field","name":{"kind":"Name","value":"productType"}},{"kind":"Field","name":{"kind":"Name","value":"vendor"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"tags"}},{"kind":"Field","name":{"kind":"Name","value":"options"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"values"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variants"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"100"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"barcode"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"compareAtPrice"}},{"kind":"Field","name":{"kind":"Name","value":"inventoryPolicy"}},{"kind":"Field","name":{"kind":"Name","value":"inventoryItem"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tracked"}},{"kind":"Field","name":{"kind":"Name","value":"measurement"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"weight"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unit"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"selectedOptions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}},{"kind":"Field","name":{"kind":"Name","value":"position"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"images"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"20"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"altText"}},{"kind":"Field","name":{"kind":"Name","value":"width"}},{"kind":"Field","name":{"kind":"Name","value":"height"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<ExportProductsQuery, ExportProductsQueryVariables>;
 export const ProductSetDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ProductSet"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ProductSetInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"productSet"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}},{"kind":"Argument","name":{"kind":"Name","value":"synchronous"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"handle"}}]}},{"kind":"Field","name":{"kind":"Name","value":"userErrors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<ProductSetMutation, ProductSetMutationVariables>;
+export const ProductByIdentifierDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ProductByIdentifier"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"handle"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"productByIdentifier"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"identifier"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"handle"},"value":{"kind":"Variable","name":{"kind":"Name","value":"handle"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"handle"}}]}}]}}]} as unknown as DocumentNode<ProductByIdentifierQuery, ProductByIdentifierQueryVariables>;

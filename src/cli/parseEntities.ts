@@ -16,6 +16,11 @@ export const getDryRun = (): boolean => {
   return argv['dry-run'] === true || argv.n === true
 }
 
+export const getOverride = (): boolean => {
+  const argv = getArgv()
+  return argv.override === true
+}
+
 export const parseEntities = (): Entity[] => {
   const argv = getArgv()
 

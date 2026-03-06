@@ -98,6 +98,13 @@ const collectImages = (rows: MatrixifyRow[]): ProductImage[] => {
   return images.map((img, i) => ({ ...img, id: `img-${i}` }))
 }
 
+/** Rows with no option values become "empty" variants that break productSet. Filter them out for multi-row products. */
+const variantRows = (rows: MatrixifyRow[]): MatrixifyRow[] => {
+  if (rows.length <= 1) return rows
+  const withOptions = rows.filter((row) => getOptionValues(row).length > 0)
+  return withOptions.length > 0 ? withOptions : rows.slice(0, 1)
+}
+
 const rowsToProduct = (rows: MatrixifyRow[]): Product => {
   const first = rows[0]
   if (!first) throw new Error('Empty product group')
@@ -115,7 +122,8 @@ const rowsToProduct = (rows: MatrixifyRow[]): Product => {
         .map((t) => t.trim())
         .filter(Boolean)
     : []
-  const variants: ProductVariant[] = rows.map((row, i) => rowToVariant(row, i + 1))
+  const forVariants = variantRows(rows)
+  const variants: ProductVariant[] = forVariants.map((row, i) => rowToVariant(row, i + 1))
   const options = buildOptionsFromVariants(variants)
   const images = collectImages(rows)
   return {
