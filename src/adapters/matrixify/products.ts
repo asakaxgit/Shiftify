@@ -25,11 +25,21 @@ const getOptionValues = (row: MatrixifyRow): Array<{ name: string; value: string
   return options
 }
 
+/** Map Matrixify/XLSX weight unit to Shopify GraphQL enum (KILOGRAMS, GRAMS, POUNDS, OUNCES). */
+const toShopifyWeightUnit = (raw: string): string => {
+  const u = raw.toLowerCase()
+  if (u === 'g' || u === 'grams') return 'GRAMS'
+  if (u === 'kg' || u === 'kilograms') return 'KILOGRAMS'
+  if (u === 'lb' || u === 'lbs' || u === 'pounds') return 'POUNDS'
+  if (u === 'oz' || u === 'ounces') return 'OUNCES'
+  return 'KILOGRAMS'
+}
+
 const rowToVariant = (row: MatrixifyRow, position: number): ProductVariant => {
   const optionValues = getOptionValues(row)
   const title = optionValues.map((o) => o.value).join(' / ') || 'Default Title'
   const weight = num(row['Variant Weight'])
-  const weightUnit = str(row['Variant Weight Unit']) || 'kg'
+  const weightUnit = toShopifyWeightUnit(str(row['Variant Weight Unit']) || 'kg')
   return {
     id: '',
     title,
