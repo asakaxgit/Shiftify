@@ -7,8 +7,9 @@ import { shopifyClient } from '#utils/shopifyClient'
 
 type ProductNode = ExportProductsQuery['products']['nodes'][number]
 
-export const exportProducts = async (): Promise<void> => {
-  logger.info('Exporting products...')
+export const exportProducts = async (options?: { dryRun?: boolean }): Promise<void> => {
+  const dryRun = options?.dryRun ?? false
+  logger.info(dryRun ? 'Exporting products (dry-run)...' : 'Exporting products...')
   const shop = config.SOURCE_SHOP
   const all: ProductNode[] = []
   let cursor: string | undefined
@@ -22,6 +23,10 @@ export const exportProducts = async (): Promise<void> => {
   } while (cursor)
 
   const outPath = path.join(config.DATA_DIR, 'products.json')
+  if (dryRun) {
+    logger.success(`Would write ${all.length} products to ${outPath}`)
+    return
+  }
   await fs.outputJson(outPath, all, { spaces: 2 })
   logger.success(`Exported ${all.length} products → ${outPath}`)
 }

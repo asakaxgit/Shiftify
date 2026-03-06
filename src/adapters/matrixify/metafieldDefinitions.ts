@@ -8,7 +8,8 @@ import { logger } from '#utils/logger'
 const PRODUCT_METAFIELD_RE = /^Metafield:\s*(.+?)\.(.+?)\s*\[([^\]]+)\]$/
 const VARIANT_METAFIELD_RE = /^Variant Metafield:\s*(.+?)\.(.+?)\s*\[([^\]]+)\]$/
 /** Alternate Matrixify format: "Label (product.metafields.namespace.key)" — type not in header, defaulted. */
-const ALT_METAFIELD_RE = /^(.+?)\s*\((product|product_variant|collection)\.metafields\.([^.]+)\.([^)]+)\)$/
+const ALT_METAFIELD_RE =
+  /^(.+?)\s*\((product|product_variant|collection)\.metafields\.([^.]+)\.([^)]+)\)$/
 
 const OWNER_PRODUCT = 'PRODUCT'
 const OWNER_PRODUCT_VARIANT = 'PRODUCTVARIANT'
@@ -143,11 +144,18 @@ export const inferFromWorkbook = (workbook: XLSX.WorkBook): MetafieldDefinition[
 
 export const exportMetafieldDefinitionsFromMatrixifyXlsx = async (
   xlsxPath: string,
+  options?: { dryRun?: boolean },
 ): Promise<void> => {
   const buf = await fs.readFile(xlsxPath)
   const workbook = XLSX.read(buf, { type: 'buffer' })
   const definitions = inferFromWorkbook(workbook)
   const outPath = path.join(config.DATA_DIR, 'metafield-definitions.json')
+  if (options?.dryRun) {
+    logger.success(
+      `Would write ${definitions.length} metafield definitions (inferred from XLSX) to ${outPath}`,
+    )
+    return
+  }
   await fs.outputJson(outPath, definitions, { spaces: 2 })
   logger.success(
     `Exported ${definitions.length} metafield definitions (inferred from XLSX) → ${outPath}`,

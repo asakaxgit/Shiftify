@@ -125,4 +125,10 @@ describe('importMetafieldDefinitions', () => {
     await importMetafieldDefinitions()
     expect(graphql).toHaveBeenCalledTimes(2)
   })
+
+  it('dry-run: reads data but does not call graphql', async () => {
+    readJson.mockResolvedValue([def])
+    await importMetafieldDefinitions({ dryRun: true })
+    expect(graphql).not.toHaveBeenCalled()
+  })
 })

@@ -157,10 +157,17 @@ export const normalizeProductsFromXlsx = async (xlsxPath: string): Promise<Produ
   return products
 }
 
-export const exportProductsFromMatrixifyXlsx = async (xlsxPath?: string): Promise<void> => {
+export const exportProductsFromMatrixifyXlsx = async (
+  xlsxPath?: string,
+  options?: { dryRun?: boolean },
+): Promise<void> => {
   const resolved = xlsxPath || config.SOURCE_XLSX_PATH || path.join(config.DATA_DIR, 'export.xlsx')
   const products = await normalizeProductsFromXlsx(resolved)
   const outPath = path.join(config.DATA_DIR, 'products.json')
+  if (options?.dryRun) {
+    logger.success(`Would write ${products.length} products to ${outPath}`)
+    return
+  }
   await fs.outputJson(outPath, products, { spaces: 2 })
   logger.success(`Exported ${products.length} products → ${outPath}`)
 }

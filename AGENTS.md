@@ -11,6 +11,8 @@ npm run import                 # import from data/ to destination store
 npm run export -- --only products --only collections --only metafield-definitions
 npm run export -- --skip collections    # inverse of --only; cannot combine with --only
 npm run import -- --only metafield-definitions
+npm run export -- --dry-run   # or -n: run reads, log what would be written, do not write files
+npm run import -- --dry-run   # or -n: read data/, log what would be created, no API mutations or file writes
 npm run test                   # vitest unit tests
 npm run test:integration       # live integration tests (requires .env.test.integration)
 npm run codegen                # regenerate src/gql/ from .graphql files
@@ -139,6 +141,8 @@ The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manag
 
 **Import order matters:** metafield-definitions → products → collections.
 The CLI enforces this order automatically when all entities are imported together.
+
+**Dry-run** (`--dry-run` or `-n`): Export still runs all reads (GraphQL or XLSX) and logs what would be written; no files are written. Import reads `data/` and the product map if present, logs what would be created; no GraphQL mutations or file writes. Use for preview only.
 
 ## Environment
 

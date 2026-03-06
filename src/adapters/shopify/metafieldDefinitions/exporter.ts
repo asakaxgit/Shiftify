@@ -19,8 +19,13 @@ const OWNER_TYPES = [
   MetafieldOwnerType.Shop,
 ] as const
 
-export const exportMetafieldDefinitions = async (): Promise<void> => {
-  logger.info('Exporting metafield definitions...')
+export const exportMetafieldDefinitions = async (options?: {
+  dryRun?: boolean
+}): Promise<void> => {
+  const dryRun = options?.dryRun ?? false
+  logger.info(
+    dryRun ? 'Exporting metafield definitions (dry-run)...' : 'Exporting metafield definitions...',
+  )
   const shop = config.SOURCE_SHOP
   const all: MetafieldDefinition[] = []
 
@@ -54,6 +59,10 @@ export const exportMetafieldDefinitions = async (): Promise<void> => {
   }
 
   const outPath = path.join(config.DATA_DIR, 'metafield-definitions.json')
+  if (dryRun) {
+    logger.success(`Would write ${all.length} metafield definitions to ${outPath}`)
+    return
+  }
   await fs.outputJson(outPath, all, { spaces: 2 })
   logger.success(`Exported ${all.length} metafield definitions → ${outPath}`)
 }

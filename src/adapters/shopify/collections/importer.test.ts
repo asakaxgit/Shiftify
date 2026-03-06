@@ -108,4 +108,11 @@ describe('importCollections', () => {
     await importCollections()
     expect(graphql).toHaveBeenCalledTimes(2)
   })
+
+  it('dry-run: reads data but does not call graphql', async () => {
+    readJson.mockResolvedValue([smartCol])
+    pathExists.mockResolvedValue(false)
+    await importCollections({ dryRun: true })
+    expect(graphql).not.toHaveBeenCalled()
+  })
 })

@@ -10,11 +10,27 @@ import { shopifyClient } from '#utils/shopifyClient'
 const VALID_OWNER_TYPES: readonly string[] = Object.values(MetafieldOwnerType)
 const isMetafieldOwnerType = (s: string): s is MetafieldOwnerType => VALID_OWNER_TYPES.includes(s)
 
-export const importMetafieldDefinitions = async (): Promise<void> => {
+export const importMetafieldDefinitions = async (options?: {
+  dryRun?: boolean
+}): Promise<void> => {
+  const dryRun = options?.dryRun ?? false
   const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'metafield-definitions.json')
   const definitions: MetafieldDefinition[] = await fs.readJson(dataPath)
-  logger.info(`Importing ${definitions.length} metafield definitions to ${shop}...`)
+  logger.info(
+    dryRun
+      ? `Would import ${definitions.length} metafield definitions to ${shop} (dry-run)...`
+      : `Importing ${definitions.length} metafield definitions to ${shop}...`,
+  )
+
+  if (dryRun) {
+    const invalid = definitions.filter((d) => !isMetafieldOwnerType(d.ownerType))
+    if (invalid.length) {
+      logger.warn(`  ${invalid.length} definition(s) have invalid ownerType and would be skipped`)
+    }
+    logger.success(`Would create ${definitions.length} metafield definitions`)
+    return
+  }
 
   const limit = pLimit(config.CONCURRENCY)
   let done = 0

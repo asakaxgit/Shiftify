@@ -100,4 +100,11 @@ describe('exportCollections', () => {
       { spaces: 2 },
     )
   })
+
+  it('dry-run: fetches data but does not write outputJson', async () => {
+    graphql.mockResolvedValueOnce(colPage([smartCol]))
+    await exportCollections({ dryRun: true })
+    expect(graphql).toHaveBeenCalledTimes(1)
+    expect(outputJson).not.toHaveBeenCalled()
+  })
 })

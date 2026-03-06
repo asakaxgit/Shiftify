@@ -128,4 +128,11 @@ describe('exportMetafieldDefinitions', () => {
     const written = outputJson.mock.calls[0][1] as MetafieldDefinition[]
     expect(written[0].validations).toEqual([{ name: 'max', type: 'number_integer', value: '100' }])
   })
+
+  it('dry-run: queries all owner types but does not write outputJson', async () => {
+    graphql.mockResolvedValue(page([], false))
+    await exportMetafieldDefinitions({ dryRun: true })
+    expect(graphql).toHaveBeenCalledTimes(OWNER_TYPE_COUNT)
+    expect(outputJson).not.toHaveBeenCalled()
+  })
 })

@@ -180,4 +180,15 @@ describe('exportMetafieldDefinitionsFromMatrixifyXlsx', () => {
 
     expect(outputJson).toHaveBeenCalledWith('./data/metafield-definitions.json', [], { spaces: 2 })
   })
+
+  it('dry-run: reads XLSX but does not write outputJson', async () => {
+    const wb = buildWorkbook(['Handle', 'Metafield: custom.material [single_line_text_field]'])
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+    readFile.mockResolvedValue(buf)
+
+    await exportMetafieldDefinitionsFromMatrixifyXlsx('/tmp/export.xlsx', { dryRun: true })
+
+    expect(readFile).toHaveBeenCalledWith('/tmp/export.xlsx')
+    expect(outputJson).not.toHaveBeenCalled()
+  })
 })

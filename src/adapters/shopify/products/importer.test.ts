@@ -163,4 +163,11 @@ describe('importProducts', () => {
       'product-b': 'gid://shopify/Product/2',
     })
   })
+
+  it('dry-run: reads data but does not call graphql or outputJson', async () => {
+    readJson.mockResolvedValue([product])
+    await importProducts({ dryRun: true })
+    expect(graphql).not.toHaveBeenCalled()
+    expect(outputJson).not.toHaveBeenCalled()
+  })
 })

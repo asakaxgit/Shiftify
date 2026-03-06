@@ -25,8 +25,9 @@ const fetchManualProductHandles = async (shop: string, collectionId: string): Pr
   return handles
 }
 
-export const exportCollections = async (): Promise<void> => {
-  logger.info('Exporting collections...')
+export const exportCollections = async (options?: { dryRun?: boolean }): Promise<void> => {
+  const dryRun = options?.dryRun ?? false
+  logger.info(dryRun ? 'Exporting collections (dry-run)...' : 'Exporting collections...')
   const shop = config.SOURCE_SHOP
   const all: Collection[] = []
   let cursor: string | undefined
@@ -55,6 +56,10 @@ export const exportCollections = async (): Promise<void> => {
   }
 
   const outPath = path.join(config.DATA_DIR, 'collections.json')
+  if (dryRun) {
+    logger.success(`Would write ${all.length} collections to ${outPath}`)
+    return
+  }
   await fs.outputJson(outPath, all, { spaces: 2 })
   logger.success(`Exported ${all.length} collections → ${outPath}`)
 }

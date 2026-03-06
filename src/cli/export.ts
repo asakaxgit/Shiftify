@@ -3,11 +3,12 @@ import { exportCollections } from '#adapters/shopify/collections/exporter'
 import { exportMetafieldDefinitions } from '#adapters/shopify/metafieldDefinitions/exporter'
 import { exportProducts } from '#adapters/shopify/products/exporter'
 import { logger } from '#utils/logger'
-import { parseEntities } from './parseEntities'
+import { getDryRun, parseEntities } from './parseEntities'
 import { getCandidates, getSource } from './sourceManager'
 
 const main = async () => {
   const requested = parseEntities()
+  const dryRun = getDryRun()
   const source = getSource()
   const candidates = await getCandidates(source)
   const entities = requested.filter((e) => candidates[e])
@@ -21,21 +22,22 @@ const main = async () => {
     return
   }
 
-  logger.info(`Exporting: ${entities.join(', ')} (source: ${source})`)
+  logger.info(`Exporting: ${entities.join(', ')} (source: ${source})${dryRun ? ' [dry-run]' : ''}`)
 
   if (source === 'matrixify-xlsx') {
     await normalizeFromXlsx({
       products: entities.includes('products'),
       collections: entities.includes('collections'),
       metafieldDefinitions: entities.includes('metafield-definitions'),
+      dryRun,
     })
   } else {
-    if (entities.includes('metafield-definitions')) await exportMetafieldDefinitions()
-    if (entities.includes('products')) await exportProducts()
-    if (entities.includes('collections')) await exportCollections()
+    if (entities.includes('metafield-definitions')) await exportMetafieldDefinitions({ dryRun })
+    if (entities.includes('products')) await exportProducts({ dryRun })
+    if (entities.includes('collections')) await exportCollections({ dryRun })
   }
 
-  logger.success('Export complete')
+  logger.success(dryRun ? 'Export complete (dry-run)' : 'Export complete')
 }
 
 main().catch((err) => {

@@ -47,20 +47,36 @@ const addProducts = async (
   }
 }
 
-export const importCollections = async (): Promise<void> => {
+export const importCollections = async (options?: { dryRun?: boolean }): Promise<void> => {
+  const dryRun = options?.dryRun ?? false
   const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'collections.json')
   const mapPath = path.join(config.MAPS_DIR, 'product-id-map.json')
 
   const collections: Collection[] = await fs.readJson(dataPath)
-  logger.info(`Importing ${collections.length} collections to ${shop}...`)
+  logger.info(
+    dryRun
+      ? `Would import ${collections.length} collections to ${shop} (dry-run)...`
+      : `Importing ${collections.length} collections to ${shop}...`,
+  )
 
   // Load handle→id map written by importProducts
   let handleToId: Record<string, string> = {}
   if (await fs.pathExists(mapPath)) {
     handleToId = await fs.readJson(mapPath)
-  } else {
+  } else if (!dryRun) {
     logger.warn('product-id-map.json not found — manual collection membership will be skipped')
+  } else {
+    logger.warn('product-id-map.json not found — would skip manual collection product membership')
+  }
+
+  if (dryRun) {
+    const manualCount = collections.filter((c) => !c.ruleSet && c.productHandles?.length).length
+    if (manualCount && !Object.keys(handleToId).length) {
+      logger.warn(`  ${manualCount} manual collection(s) would have no products (map missing)`)
+    }
+    logger.success(`Would create ${collections.length} collections`)
+    return
   }
 
   let done = 0

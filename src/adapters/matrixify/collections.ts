@@ -115,10 +115,17 @@ export const normalizeCollectionsFromXlsx = (xlsxPath: string): Collection[] => 
   return [...smart, ...custom]
 }
 
-export const exportCollectionsFromMatrixifyXlsx = async (xlsxPath: string): Promise<void> => {
+export const exportCollectionsFromMatrixifyXlsx = async (
+  xlsxPath: string,
+  options?: { dryRun?: boolean },
+): Promise<void> => {
   const collections = normalizeCollectionsFromXlsx(xlsxPath)
   logger.info(`Parsed ${collections.length} collections from Matrixify XLSX`)
   const outPath = path.join(config.DATA_DIR, 'collections.json')
+  if (options?.dryRun) {
+    logger.success(`Would write ${collections.length} collections to ${outPath}`)
+    return
+  }
   await fs.outputJson(outPath, collections, { spaces: 2 })
   logger.success(`Exported ${collections.length} collections → ${outPath}`)
 }

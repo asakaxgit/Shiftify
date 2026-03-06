@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { parseEntities } from './parseEntities'
+import { getDryRun, parseEntities } from './parseEntities'
 
 const mockExit = vi.spyOn(process, 'exit').mockImplementation((_code) => {
   throw new Error('process.exit')
@@ -77,5 +77,27 @@ describe('parseEntities', () => {
     setArgv('--only', 'products', '--skip', 'collections')
     expect(() => parseEntities()).toThrow('process.exit')
     expect(mockExit).toHaveBeenCalledWith(1)
+  })
+})
+
+describe('getDryRun', () => {
+  it('returns false when no dry-run flag', () => {
+    setArgv()
+    expect(getDryRun()).toBe(false)
+  })
+
+  it('returns true when --dry-run is passed', () => {
+    setArgv('--dry-run')
+    expect(getDryRun()).toBe(true)
+  })
+
+  it('returns true when -n is passed', () => {
+    setArgv('-n')
+    expect(getDryRun()).toBe(true)
+  })
+
+  it('returns false when --dry-run is passed with a value', () => {
+    setArgv('--dry-run', 'false')
+    expect(getDryRun()).toBe(false)
   })
 })

@@ -43,11 +43,22 @@ const buildProductInput = (product: Product): ProductSetInput => {
   } as unknown as ProductSetInput
 }
 
-export const importProducts = async (): Promise<void> => {
+export const importProducts = async (options?: { dryRun?: boolean }): Promise<void> => {
+  const dryRun = options?.dryRun ?? false
   const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'products.json')
   const products: Product[] = await fs.readJson(dataPath)
-  logger.info(`Importing ${products.length} products to ${shop}...`)
+  logger.info(
+    dryRun
+      ? `Would import ${products.length} products to ${shop} (dry-run)...`
+      : `Importing ${products.length} products to ${shop}...`,
+  )
+
+  if (dryRun) {
+    const mapPath = path.join(config.MAPS_DIR, 'product-id-map.json')
+    logger.success(`Would create ${products.length} products and write map to ${mapPath}`)
+    return
+  }
 
   const handleToId: Record<string, string> = {}
   const limit = pLimit(config.CONCURRENCY)
