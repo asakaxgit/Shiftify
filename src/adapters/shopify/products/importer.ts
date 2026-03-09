@@ -120,17 +120,18 @@ export const importProducts = async (options?: {
           const { product: created, userErrors } = set
 
           if (userErrors.length) {
+            const handle = product.handle.trim()
             if (
               override &&
               userErrors.some((e) => isHandleAlreadyTaken(e.message)) &&
-              product.handle.trim().length > 0
+              handle.length > 0
             ) {
-              const existingId = await getExistingProductIdByHandle(product.handle)
+              const existingId = await getExistingProductIdByHandle(handle)
               if (!existingId) {
                 const msg = userErrors
                   .map((e) => `${(e.field ?? []).join('.')}: ${e.message}`)
                   .join('; ')
-                logger.warn(`  [skip] ${product.handle}: ${msg} (override: no existing product found)`)
+                logger.warn(`  [skip] ${handle}: ${msg} (override: no existing product found)`)
                 errors++
                 return
               }
@@ -145,7 +146,7 @@ export const importProducts = async (options?: {
                 const msg = retryErrors
                   .map((e) => `${(e.field ?? []).join('.')}: ${e.message}`)
                   .join('; ')
-                logger.warn(`  [skip] ${product.handle}: ${msg}`)
+                logger.warn(`  [skip] ${handle}: ${msg}`)
                 errors++
                 return
               }
