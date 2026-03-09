@@ -1,9 +1,16 @@
 import path from 'node:path'
 import fs from 'fs-extra'
 import * as XLSX from 'xlsx'
-import type { Product, ProductImage, ProductOption, ProductVariant } from '#types/shopify'
+import type {
+  Product,
+  ProductImage,
+  ProductMetafield,
+  ProductOption,
+  ProductVariant,
+} from '#types/shopify'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
+import { normalizeMetafieldValue } from '#utils/normalizeMetafieldValue'
 
 type MatrixifyRow = Record<string, string | number | boolean | undefined>
 
@@ -13,6 +20,83 @@ const num = (v: string | number | boolean | undefined): number => {
   if (v === undefined || v === null || v === '') return 0
   const n = Number(v)
   return Number.isFinite(n) ? n : 0
+}
+
+const PRODUCT_METAFIELD_RE = /^Metafield:\s*(.+?)\.(.+?)\s*\[([^\]]+)\]$/
+const VARIANT_METAFIELD_RE = /^Variant Metafield:\s*(.+?)\.(.+?)\s*\[([^\]]+)\]$/
+const ALT_METAFIELD_RE =
+  /^(.+?)\s*\((product|product_variant|collection)\.metafields\.([^.]+)\.([^)]+)\)$/
+const DEFAULT_METAFIELD_TYPE = 'single_line_text_field'
+const BUILTIN_NAMESPACE = 'shopify--'
+const unescapeDots = (s: string): string => s.replace(/\\\./g, '.')
+
+type MetafieldCol = { header: string; namespace: string; key: string; type: string; owner: 'product' | 'variant' }
+
+const getMetafieldColumns = (headers: string[]): MetafieldCol[] => {
+  const out: MetafieldCol[] = []
+  for (const header of headers) {
+    const s = String(header).trim()
+    let match = s.match(PRODUCT_METAFIELD_RE)
+    if (match) {
+      const [, ns, key, type] = match
+      if (ns && key && type && !unescapeDots(ns.trim()).startsWith(BUILTIN_NAMESPACE)) {
+        out.push({
+          header,
+          namespace: unescapeDots(ns.trim()),
+          key: unescapeDots(key.trim()),
+          type: type.trim(),
+          owner: 'product',
+        })
+      }
+      continue
+    }
+    match = s.match(VARIANT_METAFIELD_RE)
+    if (match) {
+      const [, ns, key, type] = match
+      if (ns && key && type && !unescapeDots(ns.trim()).startsWith(BUILTIN_NAMESPACE)) {
+        out.push({
+          header,
+          namespace: unescapeDots(ns.trim()),
+          key: unescapeDots(key.trim()),
+          type: type.trim(),
+          owner: 'variant',
+        })
+      }
+      continue
+    }
+    match = s.match(ALT_METAFIELD_RE)
+    if (match) {
+      const [, , owner, ns, key] = match
+      if (owner === 'product' || owner === 'product_variant') {
+        const nsTrim = unescapeDots(ns.trim())
+        if (!nsTrim.startsWith(BUILTIN_NAMESPACE)) {
+          out.push({
+            header,
+            namespace: nsTrim,
+            key: unescapeDots(key.trim()),
+            type: DEFAULT_METAFIELD_TYPE,
+            owner: owner === 'product' ? 'product' : 'variant',
+          })
+        }
+      }
+    }
+  }
+  return out
+}
+
+const metafieldsFromRow = (row: MatrixifyRow, cols: MetafieldCol[]): ProductMetafield[] => {
+  const list: ProductMetafield[] = []
+  for (const c of cols) {
+    const value = str(row[c.header])
+    if (!value) continue
+    list.push({
+      namespace: c.namespace,
+      key: c.key,
+      type: c.type,
+      value: normalizeMetafieldValue(c.type, value),
+    })
+  }
+  return list
 }
 
 const getOptionValues = (row: MatrixifyRow): Array<{ name: string; value: string }> => {
@@ -35,11 +119,16 @@ const toShopifyWeightUnit = (raw: string): string => {
   return 'KILOGRAMS'
 }
 
-const rowToVariant = (row: MatrixifyRow, position: number): ProductVariant => {
+const rowToVariant = (
+  row: MatrixifyRow,
+  position: number,
+  variantMetafieldCols: MetafieldCol[],
+): ProductVariant => {
   const optionValues = getOptionValues(row)
   const title = optionValues.map((o) => o.value).join(' / ') || 'Default Title'
   const weight = num(row['Variant Weight'])
   const weightUnit = toShopifyWeightUnit(str(row['Variant Weight Unit']) || 'kg')
+  const metafields = metafieldsFromRow(row, variantMetafieldCols)
   return {
     id: '',
     title,
@@ -56,6 +145,7 @@ const rowToVariant = (row: MatrixifyRow, position: number): ProductVariant => {
     },
     selectedOptions: optionValues,
     position,
+    ...(metafields.length > 0 ? { metafields } : {}),
   }
 }
 
@@ -105,7 +195,11 @@ const variantRows = (rows: MatrixifyRow[]): MatrixifyRow[] => {
   return withOptions.length > 0 ? withOptions : rows.slice(0, 1)
 }
 
-const rowsToProduct = (rows: MatrixifyRow[]): Product => {
+const rowsToProduct = (
+  rows: MatrixifyRow[],
+  productMetafieldCols: MetafieldCol[],
+  variantMetafieldCols: MetafieldCol[],
+): Product => {
   const first = rows[0]
   if (!first) throw new Error('Empty product group')
   const handle =
@@ -123,9 +217,12 @@ const rowsToProduct = (rows: MatrixifyRow[]): Product => {
         .filter(Boolean)
     : []
   const forVariants = variantRows(rows)
-  const variants: ProductVariant[] = forVariants.map((row, i) => rowToVariant(row, i + 1))
+  const variants: ProductVariant[] = forVariants.map((row, i) =>
+    rowToVariant(row, i + 1, variantMetafieldCols),
+  )
   const options = buildOptionsFromVariants(variants)
   const images = collectImages(rows)
+  const productMetafields = metafieldsFromRow(first, productMetafieldCols)
   return {
     id: '',
     title: str(first.Title) || 'Untitled',
@@ -138,6 +235,7 @@ const rowsToProduct = (rows: MatrixifyRow[]): Product => {
     options,
     variants: { nodes: variants },
     images: { nodes: images },
+    ...(productMetafields.length > 0 ? { metafields: productMetafields } : {}),
   }
 }
 
@@ -148,6 +246,11 @@ const parseProductsSheet = (workbook: XLSX.WorkBook): Product[] => {
   }
   const rows = XLSX.utils.sheet_to_json<MatrixifyRow>(sheet, { defval: '' })
   if (rows.length === 0) return []
+
+  const headers = rows.length > 0 ? Object.keys(rows[0]) : []
+  const allMetafieldCols = getMetafieldColumns(headers)
+  const productMetafieldCols = allMetafieldCols.filter((c) => c.owner === 'product')
+  const variantMetafieldCols = allMetafieldCols.filter((c) => c.owner === 'variant')
 
   const groups: MatrixifyRow[][] = []
   let currentGroup: MatrixifyRow[] = []
@@ -164,7 +267,7 @@ const parseProductsSheet = (workbook: XLSX.WorkBook): Product[] => {
   }
   if (currentGroup.length > 0) groups.push(currentGroup)
 
-  return groups.map((g) => rowsToProduct(g))
+  return groups.map((g) => rowsToProduct(g, productMetafieldCols, variantMetafieldCols))
 }
 
 export const normalizeProductsFromXlsx = async (xlsxPath: string): Promise<Product[]> => {

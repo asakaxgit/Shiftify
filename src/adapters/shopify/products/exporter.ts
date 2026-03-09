@@ -1,11 +1,39 @@
 import path from 'node:path'
 import fs from 'fs-extra'
 import { ExportProductsDocument, type ExportProductsQuery } from '#gql/graphql'
+import { normalizeMetafieldValue } from '#utils/normalizeMetafieldValue'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
 import { shopifyClient } from '#utils/shopifyClient'
 
 type ProductNode = ExportProductsQuery['products']['nodes'][number]
+
+type MetafieldNode = { namespace: string; key: string; type: string; value: string }
+
+const normalizeMetafieldNodes = (nodes: MetafieldNode[] | null | undefined): MetafieldNode[] => {
+  if (!nodes?.length) return []
+  return nodes.map((m) => ({ ...m, value: normalizeMetafieldValue(m.type, m.value) }))
+}
+
+const normalizeProductNode = (node: ProductNode): ProductNode => {
+  const metafields =
+    node.metafields?.nodes?.length ?
+      { nodes: normalizeMetafieldNodes(node.metafields.nodes) }
+    : node.metafields
+  const variants =
+    node.variants?.nodes?.length
+      ? {
+          nodes: node.variants.nodes.map((v) => ({
+            ...v,
+            metafields:
+              v.metafields?.nodes?.length ?
+                { nodes: normalizeMetafieldNodes(v.metafields.nodes) }
+              : v.metafields,
+          })),
+        }
+      : node.variants
+  return { ...node, metafields, variants }
+}
 
 export const exportProducts = async (options?: { dryRun?: boolean }): Promise<void> => {
   const dryRun = options?.dryRun ?? false
@@ -27,6 +55,7 @@ export const exportProducts = async (options?: { dryRun?: boolean }): Promise<vo
     logger.success(`Would write ${all.length} products to ${outPath}`)
     return
   }
-  await fs.outputJson(outPath, all, { spaces: 2 })
-  logger.success(`Exported ${all.length} products → ${outPath}`)
+  const normalized = all.map(normalizeProductNode)
+  await fs.outputJson(outPath, normalized, { spaces: 2 })
+  logger.success(`Exported ${normalized.length} products → ${outPath}`)
 }

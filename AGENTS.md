@@ -127,17 +127,17 @@ The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manag
 **When source is Shopify** (`SOURCE_TYPE=shopify`):
 
 1. `exportMetafieldDefinitions` → `data/metafield-definitions.json` (all owner types)
-2. `exportProducts` → `data/products.json` (GraphQL from SOURCE_SHOP)
+2. `exportProducts` → `data/products.json` (GraphQL from SOURCE_SHOP; includes product and variant metafields)
 3. `exportCollections` → `data/collections.json` (metadata + ruleSet; manual collections include `productHandles[]`)
 
 **When source is Matrixify XLSX** (`SOURCE_TYPE=matrixify-xlsx`):
 
-1. Export reads the XLSX (path from `SOURCE_XLSX_PATH` or a file in `DATA_DIR`), normalizes the **Products** sheet to `data/products.json`, optionally **Smart Collections** / **Custom Collections** to `data/collections.json`, and optionally **metafield definitions** to `data/metafield-definitions.json`. Metafield definitions are **inferred** from column headers. Two header formats are supported: (a) `Metafield: namespace.key [type]` / `Variant Metafield: namespace.key [type]`; (b) `Label (product.metafields.namespace.key)` or `(product_variant|collection).metafields.namespace.key` — for (b) the type is defaulted to `single_line_text_field` and the label is used as the definition name. Namespaces starting with `shopify--` (e.g. `shopify--discovery--product_recommendation`) are **excluded** as Shopify built-in fields, not custom metafields. **Limitations:** description, validations, and pinnedPosition are not available from headers and are set to `null`/`[]`.
+1. Export reads the XLSX (path from `SOURCE_XLSX_PATH` or a file in `DATA_DIR`), normalizes the **Products** sheet to `data/products.json` (including product- and variant-level metafields from `Metafield:` / `Variant Metafield:` columns), optionally **Smart Collections** / **Custom Collections** to `data/collections.json`, and optionally **metafield definitions** to `data/metafield-definitions.json`. Metafield definitions are **inferred** from column headers. Two header formats are supported: (a) `Metafield: namespace.key [type]` / `Variant Metafield: namespace.key [type]`; (b) `Label (product.metafields.namespace.key)` or `(product_variant|collection).metafields.namespace.key` — for (b) the type is defaulted to `single_line_text_field` and the label is used as the definition name. Namespaces starting with `shopify--` (e.g. `shopify--discovery--product_recommendation`) are **excluded** as Shopify built-in fields, not custom metafields. **Limitations:** description, validations, and pinnedPosition are not available from headers and are set to `null`/`[]`.
 
 **Import** (same for both source types):
 
 4. `importMetafieldDefinitions` → creates definitions on destination (skips on `userErrors`, e.g. already exists)
-5. `importProducts` → creates products on destination, writes `maps/product-id-map.json`
+5. `importProducts` → creates products on destination (including product and variant metafields), writes `maps/product-id-map.json`
 6. `importCollections` → loads map, creates collections, resolves manual membership via handle→GID lookup
 
 **Import order matters:** metafield-definitions → products → collections.
@@ -189,5 +189,5 @@ SAFE_SHOP_PATTERN=dev                           # shop domain must contain this
 - `idMap` — stub only; importers use `maps/product-id-map.json` directly
 - Customers / Orders — deferred to Phase 2 (PII masking required)
 - Bulk Operations — Phase 1 uses regular GraphQL; bulk ops for 25k+ products later
-- Metafields — not included in export/import queries
+- Product and variant metafields are exported (Shopify GraphQL), normalized from Matrixify columns (`Metafield:` / `Variant Metafield:` headers), and imported via `productSet` (product and variant `metafields` input). Metafield definitions must exist on the destination (import metafield-definitions first).
 - Matrixify XLSX: location-specific columns (e.g. price per market, inventory per location) are ignored; only core product/variant/collection columns are normalized. Rows with no option values (Option1/2/3) are filtered out during Products normalization so they do not become empty variants that would fail import.

@@ -7,13 +7,30 @@ import {
   type ProductSetInput,
   type WeightUnit,
 } from '#gql/graphql'
-import type { Product, ProductVariant } from '#types/shopify'
+import type { Product, ProductMetafield, ProductVariant } from '#types/shopify'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
 import { shopifyClient } from '#utils/shopifyClient'
 
+/** Normalize metafields from GraphQL shape (metafields.nodes) or direct array. */
+const getMetafields = (
+  owner: { metafields?: { nodes?: ProductMetafield[] } | ProductMetafield[] },
+): ProductMetafield[] => {
+  const raw = owner.metafields
+  if (!raw) return []
+  return Array.isArray(raw) ? raw : raw.nodes ?? []
+}
+
+const toMetafieldInput = (m: ProductMetafield) => ({
+  namespace: m.namespace,
+  key: m.key,
+  type: m.type,
+  value: m.value,
+})
+
 export const buildVariantInput = (variant: ProductVariant) => {
   const weight = variant.inventoryItem.measurement?.weight
+  const metafields = getMetafields(variant)
   return {
     sku: variant.sku ?? undefined,
     barcode: variant.barcode ?? undefined,
@@ -28,10 +45,12 @@ export const buildVariantInput = (variant: ProductVariant) => {
     },
     optionValues: variant.selectedOptions.map((o) => ({ optionName: o.name, name: o.value })),
     position: variant.position,
+    ...(metafields.length > 0 ? { metafields: metafields.map(toMetafieldInput) } : {}),
   }
 }
 
 const buildProductInput = (product: Product): ProductSetInput => {
+  const productMetafields = getMetafields(product)
   return {
     title: product.title,
     handle: product.handle,
@@ -45,6 +64,7 @@ const buildProductInput = (product: Product): ProductSetInput => {
       values: o.values.map((v) => ({ name: v })),
     })),
     variants: product.variants.nodes.map((v) => buildVariantInput(v)),
+    ...(productMetafields.length > 0 ? { metafields: productMetafields.map(toMetafieldInput) } : {}),
   } as unknown as ProductSetInput
 }
 

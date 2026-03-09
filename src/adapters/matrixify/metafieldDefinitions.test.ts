@@ -154,7 +154,7 @@ describe('exportMetafieldDefinitionsFromMatrixifyXlsx', () => {
 
     expect(readFile).toHaveBeenCalledWith('/tmp/export.xlsx')
     expect(outputJson).toHaveBeenCalledWith(
-      './data/metafield-definitions.json',
+      'data/metafield-definitions.json',
       expect.arrayContaining([
         expect.objectContaining({
           namespace: 'custom',
@@ -178,7 +178,7 @@ describe('exportMetafieldDefinitionsFromMatrixifyXlsx', () => {
 
     await exportMetafieldDefinitionsFromMatrixifyXlsx('/tmp/empty.xlsx')
 
-    expect(outputJson).toHaveBeenCalledWith('./data/metafield-definitions.json', [], { spaces: 2 })
+    expect(outputJson).toHaveBeenCalledWith('data/metafield-definitions.json', [], { spaces: 2 })
   })
 
   it('dry-run: reads XLSX but does not write outputJson', async () => {

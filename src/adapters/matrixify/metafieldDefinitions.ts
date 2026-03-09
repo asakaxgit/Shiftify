@@ -5,8 +5,14 @@ import type { MetafieldDefinition } from '#types/shopify'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
 
-const PRODUCT_METAFIELD_RE = /^Metafield:\s*(.+?)\.(.+?)\s*\[([^\]]+)\]$/
-const VARIANT_METAFIELD_RE = /^Variant Metafield:\s*(.+?)\.(.+?)\s*\[([^\]]+)\]$/
+/** Namespace/key part: non-dot, or backslash-escaped char (so \. is part of name, not separator). */
+const NS_KEY_PART = '(?:[^.\\\\]|\\\\.)*'
+const PRODUCT_METAFIELD_RE = new RegExp(
+  `^Metafield:\\s*(${NS_KEY_PART})\\.(${NS_KEY_PART})\\s*\\[([^\\]]+)\\]$`,
+)
+const VARIANT_METAFIELD_RE = new RegExp(
+  `^Variant Metafield:\\s*(${NS_KEY_PART})\\.(${NS_KEY_PART})\\s*\\[([^\\]]+)\\]$`,
+)
 /** Alternate Matrixify format: "Label (product.metafields.namespace.key)" — type not in header, defaulted. */
 const ALT_METAFIELD_RE =
   /^(.+?)\s*\((product|product_variant|collection)\.metafields\.([^.]+)\.([^)]+)\)$/
