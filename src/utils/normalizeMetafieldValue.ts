@@ -5,7 +5,7 @@
  * - date → YYYY-MM-DD
  */
 
-const DATE_TIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+const DATE_TIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export const normalizeMetafieldValue = (type: string, value: string): string => {
