@@ -8,6 +8,7 @@ TypeScript CLI for migrating Shopify store data (products, collections, metafiel
 node --version                 # must be 18+  (.node-version = v24.13.0)
 npm run export                 # export from source → data/
 npm run import                 # import from data/ to destination store
+npm run auth                   # run OAuth flow to get access tokens
 npm run export -- --only products --only collections --only metafield-definitions
 npm run export -- --skip collections    # inverse of --only; cannot combine with --only
 npm run import -- --only metafield-definitions
@@ -156,6 +157,8 @@ SOURCE_SHOP=your-source.myshopify.com
 SOURCE_ACCESS_TOKEN=shpat_xxx
 DEST_SHOP=your-dest.myshopify.com
 DEST_ACCESS_TOKEN=shpat_xxx
+SHOPIFY_CLIENT_ID=your_app_client_id
+SHOPIFY_CLIENT_SECRET=your_app_client_secret
 SOURCE_TYPE=shopify              # shopify | matrixify-xlsx
 # When SOURCE_TYPE=matrixify-xlsx, path to XLSX (or leave empty to use a file in DATA_DIR):
 # SOURCE_XLSX_PATH=/path/to/Export.xlsx
@@ -166,6 +169,20 @@ CONCURRENCY=10
 DATA_DIR=./data
 MAPS_DIR=./maps
 ```
+
+To obtain `SOURCE_ACCESS_TOKEN` / `DEST_ACCESS_TOKEN` via OAuth instead of legacy custom-app tokens:
+
+- In the Shopify Partner Dashboard app settings, set **Application URL** to the same host as the callback (default: `http://localhost:3456`). Add **Allowed redirection URL(s)** entry: `http://localhost:3456/shopify/oauth/callback`. Shopify requires the redirect URI host to match the Application URL host; if you use a custom `SHOPIFY_OAUTH_REDIRECT_HOST` (e.g. `127.0.0.1`), set Application URL to that same host and port.
+- Set `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET` from that app in your `.env`.
+- Run `npm run auth`:
+  - `npm run auth` (both SOURCE_SHOP and DEST_SHOP),
+  - or `npm run auth -- --source` / `npm run auth -- --dest` to target just one.
+- The command opens a browser for each shop, walks through Shopify’s OAuth grant screen, and then prints a line you can paste into `.env`:
+
+  - For source: `SOURCE_ACCESS_TOKEN=...`
+  - For destination: `DEST_ACCESS_TOKEN=...`
+
+Tokens are requested as **offline** Admin access tokens; they do not expire and can be reused for subsequent Shiftify runs.
 
 ## Integration Tests
 

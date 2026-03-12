@@ -9,6 +9,7 @@
   "scripts": {
     "export": "tsx src/cli/export.ts",
     "import": "tsx src/cli/import.ts",
+    "auth": "tsx src/cli/auth.ts",
     "typecheck": "tsc --noEmit",
     "lint": "biome lint ./src",
     "format": "biome format ./src --write",
@@ -19,6 +20,7 @@
     "codegen": "graphql-codegen"
   },
   "dependencies": {
+    "@shopify/shopify-api": "^13.0.0",
     "chalk": "^5.3.0",
     "dotenv": "^16.3.1",
     "fs-extra": "^11.2.0",
