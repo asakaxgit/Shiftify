@@ -13,12 +13,7 @@ type AuthOptions = {
   shop: string
 }
 
-const OAUTH_SCOPES = [
-  'read_products',
-  'write_products',
-  'read_validations',
-  'write_validations',
-]
+const OAUTH_SCOPES = ['read_products', 'write_products', 'read_validations', 'write_validations']
 
 const isValidShop = (shop: string): boolean => {
   const re = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/

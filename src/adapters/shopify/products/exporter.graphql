@@ -1,5 +1,5 @@
-query ExportProducts($cursor: String) {
-  products(first: 250, after: $cursor) {
+query ExportProducts($first: Int!, $cursor: String, $query: String) {
+  products(first: $first, after: $cursor, query: $query) {
     pageInfo {
       hasNextPage
       endCursor
@@ -17,7 +17,7 @@ query ExportProducts($cursor: String) {
         name
         values
       }
-      metafields(first: 100) {
+      metafields(first: 50) {
         nodes {
           namespace
           key
@@ -25,7 +25,7 @@ query ExportProducts($cursor: String) {
           value
         }
       }
-      variants(first: 100) {
+      variants(first: 50) {
         nodes {
           id
           title
@@ -48,7 +48,7 @@ query ExportProducts($cursor: String) {
             value
           }
           position
-          metafields(first: 50) {
+          metafields(first: 25) {
             nodes {
               namespace
               key
@@ -58,7 +58,7 @@ query ExportProducts($cursor: String) {
           }
         }
       }
-      images(first: 20) {
+      images(first: 15) {
         nodes {
           id
           url

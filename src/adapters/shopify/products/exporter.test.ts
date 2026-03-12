@@ -42,6 +42,7 @@ describe('exportProducts', () => {
     graphql.mockResolvedValueOnce(page([productA], false))
     await exportProducts()
     expect(graphql).toHaveBeenCalledTimes(1)
+    expect(graphql).toHaveBeenCalledWith('prod.myshopify.com', expect.any(Object), { first: 100 })
     expect(outputJson).toHaveBeenCalledWith(expect.stringContaining('products.json'), [productA], {
       spaces: 2,
     })
@@ -54,6 +55,7 @@ describe('exportProducts', () => {
     await exportProducts()
     expect(graphql).toHaveBeenCalledTimes(2)
     expect(graphql).toHaveBeenNthCalledWith(2, 'prod.myshopify.com', expect.any(Object), {
+      first: 100,
       cursor: 'cur1',
     })
     expect(outputJson).toHaveBeenCalledWith(
@@ -63,10 +65,33 @@ describe('exportProducts', () => {
     )
   })
 
-  it('passes empty vars on the first request (no cursor)', async () => {
+  it('passes first and optional query on requests', async () => {
     graphql.mockResolvedValueOnce(page([], false))
     await exportProducts()
-    expect(graphql).toHaveBeenCalledWith('prod.myshopify.com', expect.any(Object), {})
+    expect(graphql).toHaveBeenCalledWith('prod.myshopify.com', expect.any(Object), { first: 100 })
+  })
+
+  it('passes query when provided', async () => {
+    graphql.mockResolvedValueOnce(page([productA], false))
+    await exportProducts({ query: 'status:active' })
+    expect(graphql).toHaveBeenCalledWith('prod.myshopify.com', expect.any(Object), {
+      first: 100,
+      query: 'status:active',
+    })
+  })
+
+  it('stops at limit and slices last page', async () => {
+    graphql
+      .mockResolvedValueOnce(page([productA], true, 'cur1'))
+      .mockResolvedValueOnce(page([productB], false))
+    await exportProducts({ limit: 1 })
+    expect(graphql).toHaveBeenCalledTimes(1)
+    expect(graphql).toHaveBeenNthCalledWith(1, 'prod.myshopify.com', expect.any(Object), {
+      first: 1,
+    })
+    expect(outputJson).toHaveBeenCalledWith(expect.stringContaining('products.json'), [productA], {
+      spaces: 2,
+    })
   })
 
   it('dry-run: fetches data but does not write outputJson', async () => {

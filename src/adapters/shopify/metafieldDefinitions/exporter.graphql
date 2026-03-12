@@ -1,5 +1,5 @@
-query ExportMetafieldDefinitions($ownerType: MetafieldOwnerType!, $cursor: String) {
-  metafieldDefinitions(ownerType: $ownerType, first: 250, after: $cursor) {
+query ExportMetafieldDefinitions($ownerType: MetafieldOwnerType!, $first: Int!, $cursor: String) {
+  metafieldDefinitions(ownerType: $ownerType, first: $first, after: $cursor) {
     pageInfo {
       hasNextPage
       endCursor

@@ -13,12 +13,12 @@ import { logger } from '#utils/logger'
 import { shopifyClient } from '#utils/shopifyClient'
 
 /** Normalize metafields from GraphQL shape (metafields.nodes) or direct array. */
-const getMetafields = (
-  owner: { metafields?: { nodes?: ProductMetafield[] } | ProductMetafield[] },
-): ProductMetafield[] => {
+const getMetafields = (owner: {
+  metafields?: { nodes?: ProductMetafield[] } | ProductMetafield[]
+}): ProductMetafield[] => {
   const raw = owner.metafields
   if (!raw) return []
-  return Array.isArray(raw) ? raw : raw.nodes ?? []
+  return Array.isArray(raw) ? raw : (raw.nodes ?? [])
 }
 
 const toMetafieldInput = (m: ProductMetafield) => ({
@@ -64,13 +64,17 @@ const buildProductInput = (product: Product): ProductSetInput => {
       values: o.values.map((v) => ({ name: v })),
     })),
     variants: product.variants.nodes.map((v) => buildVariantInput(v)),
-    ...(productMetafields.length > 0 ? { metafields: productMetafields.map(toMetafieldInput) } : {}),
+    ...(productMetafields.length > 0
+      ? { metafields: productMetafields.map(toMetafieldInput) }
+      : {}),
   } as unknown as ProductSetInput
 }
 
 const isHandleAlreadyTaken = (message: string): boolean => {
   const m = message.toLowerCase()
-  return m.includes('handle') && (m.includes('taken') || m.includes('already') || m.includes('in use'))
+  return (
+    m.includes('handle') && (m.includes('taken') || m.includes('already') || m.includes('in use'))
+  )
 }
 
 export const importProducts = async (options?: {
@@ -131,7 +135,9 @@ export const importProducts = async (options?: {
                 const msg = userErrors
                   .map((e) => `${(e.field ?? []).join('.')}: ${e.message}`)
                   .join('; ')
-                logger.warn(`  [skip] ${handle}: ${msg} (override: no existing product found)`)
+                logger.warn(
+                  `  [skip] ${product.handle}: ${msg} (override: no existing product found)`,
+                )
                 errors++
                 return
               }

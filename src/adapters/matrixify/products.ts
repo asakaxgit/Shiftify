@@ -30,7 +30,13 @@ const DEFAULT_METAFIELD_TYPE = 'single_line_text_field'
 const BUILTIN_NAMESPACE = 'shopify--'
 const unescapeDots = (s: string): string => s.replace(/\\\./g, '.')
 
-type MetafieldCol = { header: string; namespace: string; key: string; type: string; owner: 'product' | 'variant' }
+type MetafieldCol = {
+  header: string
+  namespace: string
+  key: string
+  type: string
+  owner: 'product' | 'variant'
+}
 
 const getMetafieldColumns = (headers: string[]): MetafieldCol[] => {
   const out: MetafieldCol[] = []

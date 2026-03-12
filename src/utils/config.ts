@@ -15,6 +15,8 @@ export const config = {
   SHOPIFY_PLAN: process.env.SHOPIFY_PLAN ?? 'plus',
   BATCH_SIZE: Number(process.env.BATCH_SIZE ?? 250),
   CONCURRENCY: Number(process.env.CONCURRENCY ?? 10),
+  EXPORT_LIMIT: process.env.EXPORT_LIMIT ? Number(process.env.EXPORT_LIMIT) : null,
+  EXPORT_QUERY: (process.env.EXPORT_QUERY ?? '').trim() || null,
   DATA_DIR: process.env.DATA_DIR ?? './data',
   MAPS_DIR: process.env.MAPS_DIR ?? './maps',
   SHOPIFY_OAUTH_REDIRECT_HOST: process.env.SHOPIFY_OAUTH_REDIRECT_HOST ?? 'localhost',

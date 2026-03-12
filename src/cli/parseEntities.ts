@@ -1,4 +1,5 @@
 import minimist from 'minimist'
+import { config } from '#utils/config'
 import { logger } from '#utils/logger'
 
 export type Entity = 'products' | 'collections' | 'metafield-definitions'
@@ -19,6 +20,26 @@ export const getDryRun = (): boolean => {
 export const getOverride = (): boolean => {
   const argv = getArgv()
   return argv.override === true
+}
+
+export const getExportLimit = (): number | null => {
+  const argv = getArgv()
+  const raw = argv.limit ?? argv.l
+  if (raw !== undefined) {
+    const n = Number(raw)
+    return Number.isInteger(n) && n > 0 ? n : null
+  }
+  return config.EXPORT_LIMIT
+}
+
+export const getExportQuery = (): string | null => {
+  const argv = getArgv()
+  const raw = argv.query ?? argv.q
+  if (raw !== undefined && typeof raw === 'string') {
+    const s = raw.trim()
+    return s === '' ? null : s
+  }
+  return config.EXPORT_QUERY
 }
 
 export const parseEntities = (): Entity[] => {

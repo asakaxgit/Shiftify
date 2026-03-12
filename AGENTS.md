@@ -14,6 +14,8 @@ npm run export -- --skip collections    # inverse of --only; cannot combine with
 npm run import -- --only metafield-definitions
 npm run import -- --override  # upsert by handle (update existing products on "handle already taken")
 npm run export -- --dry-run   # or -n: run reads, log what would be written, do not write files
+npm run export -- --limit 50  # or -l: export only the first N items per entity (Shopify source only)
+npm run export -- --query "status:active"  # or -q: filter via Shopify search syntax (products/collections; Shopify source only)
 npm run import -- --dry-run   # or -n: read data/, log what would be created, no API mutations or file writes
 npm run test                   # vitest unit tests
 npm run test:integration       # live integration tests (requires .env.test.integration)
@@ -144,6 +146,8 @@ The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manag
 **Import order matters:** metafield-definitions → products → collections.
 The CLI enforces this order automatically when all entities are imported together.
 
+**Limit and query** (`--limit` / `-l`, `--query` / `-q`): When exporting from Shopify, `--limit N` caps each entity to the first N items; `--query "..."` filters products and collections using [Shopify search syntax](https://shopify.dev/docs/api/usage/search-syntax) (e.g. `title:*sale*`, `status:active`, `product_type:Shirt`). The filter is passed to the GraphQL API (server-side). Env equivalents: `EXPORT_LIMIT`, `EXPORT_QUERY`.
+
 **Dry-run** (`--dry-run` or `-n`): Export still runs all reads (GraphQL or XLSX) and logs what would be written; no files are written. Import reads `data/` and the product map if present, logs what would be created; no GraphQL mutations or file writes. Use for preview only.
 
 **Override / upsert** (`--override` on `npm run import`): When importing products, if Shopify returns a “handle already taken / in use” userError, Shiftify looks up the existing destination product by handle and retries as an update (using `productSet` with the existing product `id`). This allows re-running imports against a destination store without manually deleting products first.
@@ -166,6 +170,10 @@ API_VERSION=2026-01
 SHOPIFY_PLAN=plus                # plus | standard  (affects bucket size: 2000 | 1000)
 BATCH_SIZE=250
 CONCURRENCY=10
+# Optional: cap export to first N items per entity (Shopify source); overridable by --limit
+# EXPORT_LIMIT=100
+# Optional: filter products/collections via Shopify search syntax (e.g. title:*sale*, status:active); overridable by --query
+# EXPORT_QUERY=status:active
 DATA_DIR=./data
 MAPS_DIR=./maps
 ```

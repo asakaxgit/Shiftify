@@ -102,14 +102,19 @@ describe('exportMetafieldDefinitions', () => {
     expect(written[1].key).toBe('weight_limit')
   })
 
-  it('passes cursor on second page request', async () => {
+  it('passes first and cursor on paginated requests', async () => {
     graphql
       .mockResolvedValueOnce(page([defA], true, 'cursor-abc'))
       .mockResolvedValueOnce(page([], false))
       .mockResolvedValue(page([], false))
     await exportMetafieldDefinitions()
+    expect(graphql).toHaveBeenNthCalledWith(1, 'prod.myshopify.com', expect.any(Object), {
+      ownerType: MetafieldOwnerType.Product,
+      first: 250,
+    })
     expect(graphql).toHaveBeenNthCalledWith(2, 'prod.myshopify.com', expect.any(Object), {
       ownerType: MetafieldOwnerType.Product,
+      first: 250,
       cursor: 'cursor-abc',
     })
   })

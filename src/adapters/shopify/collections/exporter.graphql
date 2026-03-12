@@ -1,5 +1,5 @@
-query ExportCollections($cursor: String) {
-  collections(first: 250, after: $cursor) {
+query ExportCollections($first: Int!, $cursor: String, $query: String) {
+  collections(first: $first, after: $cursor, query: $query) {
     pageInfo {
       hasNextPage
       endCursor
@@ -27,9 +27,9 @@ query ExportCollections($cursor: String) {
   }
 }
 
-query CollectionProducts($id: ID!, $cursor: String) {
+query CollectionProducts($id: ID!, $first: Int!, $cursor: String) {
   collection(id: $id) {
-    products(first: 250, after: $cursor) {
+    products(first: $first, after: $cursor) {
       pageInfo {
         hasNextPage
         endCursor
