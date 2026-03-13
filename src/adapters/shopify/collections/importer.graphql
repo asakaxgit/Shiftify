@@ -1,3 +1,12 @@
+query ExportPublications($first: Int!) {
+  publications(first: $first) {
+    nodes {
+      id
+      name
+    }
+  }
+}
+
 mutation CollectionCreate($input: CollectionInput!) {
   collectionCreate(input: $input) {
     collection {
@@ -16,6 +25,15 @@ mutation CollectionAddProducts($id: ID!, $productIds: [ID!]!) {
     collection {
       id
     }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+
+mutation PublishablePublish($id: ID!, $input: [PublicationInput!]!) {
+  publishablePublish(id: $id, input: $input) {
     userErrors {
       field
       message

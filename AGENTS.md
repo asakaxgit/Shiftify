@@ -147,7 +147,7 @@ The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manag
 
 4. `importMetafieldDefinitions` → creates definitions on destination (skips on `userErrors`, e.g. already exists)
 5. `importProducts` → creates products on destination (including product and variant metafields, and product images via source URLs in `ProductSetInput.files`), writes `maps/product-id-map.json`
-6. `importCollections` → loads map, creates collections, resolves manual membership via handle→GID lookup
+6. `importCollections` → loads map, creates collections, resolves manual membership via handle→GID lookup, then publishes each created collection to sales channel(s): **default = Online Store only**; set `COLLECTION_PUBLISH_CHANNELS=all` to publish to every channel.
 
 **Import order matters:** metafield-definitions → products → collections.
 The CLI enforces this order automatically when all entities are imported together.
@@ -184,6 +184,8 @@ DATA_DIR=./data
 # Optional: output path for npm run export-to-xlsx (default: DATA_DIR/export.xlsx)
 # EXPORT_XLSX_PATH=./data/export.xlsx
 MAPS_DIR=./maps
+# Optional: when importing collections, which channel(s) to publish to. Omit or leave empty = Online Store only; set to "all" to publish to every sales channel.
+# COLLECTION_PUBLISH_CHANNELS=all
 ```
 
 To obtain `SOURCE_ACCESS_TOKEN` / `DEST_ACCESS_TOKEN` via OAuth instead of legacy custom-app tokens:

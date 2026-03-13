@@ -20,6 +20,8 @@ export const config = {
   DATA_DIR: process.env.DATA_DIR ?? './data',
   EXPORT_XLSX_PATH: process.env.EXPORT_XLSX_PATH ?? '',
   MAPS_DIR: process.env.MAPS_DIR ?? './maps',
+  /** When 'all', publish imported collections to every sales channel; otherwise only to Online Store. */
+  COLLECTION_PUBLISH_CHANNELS: (process.env.COLLECTION_PUBLISH_CHANNELS ?? '').trim().toLowerCase(),
   SHOPIFY_OAUTH_REDIRECT_HOST: process.env.SHOPIFY_OAUTH_REDIRECT_HOST ?? 'localhost',
   SHOPIFY_OAUTH_REDIRECT_PORT: Number(process.env.SHOPIFY_OAUTH_REDIRECT_PORT ?? 3456),
 }
