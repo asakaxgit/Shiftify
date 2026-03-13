@@ -35,9 +35,9 @@ Adapters live under `src/adapters/` by system: each adapter handles source and/o
 src/
 ├── adapters/
 │   ├── shopify/            # source (GraphQL export) + destination (GraphQL import)
-│   │   ├── products/       # exporter.{ts,graphql,test.ts} + importer.{ts,graphql,test.ts}
-│   │   ├── collections/    # exporter + importer
-│   │   └── metafieldDefinitions/  # exporter + importer
+│   │   ├── products/       # exporter + importer; queries/ + mutations/ for .graphql ops
+│   │   ├── collections/    # exporter + importer; queries/ + mutations/ for .graphql ops
+│   │   └── metafieldDefinitions/  # exporter + importer; queries/ + mutations/ for .graphql ops
 │   ├── xlsx/                # generic XLSX read/write (readWorkbook, getSheetAsRows, createWorkbook, appendSheet, writeWorkbook)
 │   └── matrixify/           # Matrixify format: uses xlsx for I/O; normalizeFromXlsx, productsToRows, collectionsToRows, writeToXlsx
 │       ├── index.ts        # normalizeFromXlsx, writeToXlsx
@@ -85,7 +85,7 @@ codegen.ts              # graphql-codegen config (Shopify public schema proxy)
 - **`type` over `interface`** — always use `type Foo = { ... }`, never `interface Foo { ... }`
 - **No type casts** — `value as SomeType` and `value!` are banned (`noExplicitAny` + `noNonNullAssertion` in Biome); `as const` is fine
 - **Strict TypeScript** — `strict: true`; use type predicates (`(x): x is T =>`) instead of casts
-- **GraphQL operations** live in co-located `.graphql` files; run `npm run codegen` after changing them
+- **GraphQL operations** live in adapter `queries/` and `mutations/` subdirs (one operation per `.graphql` file); run `npm run codegen` after changing them
 
 ## Documentation Sync Rule
 
