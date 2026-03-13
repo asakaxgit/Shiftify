@@ -1,0 +1,6 @@
+query ProductByIdentifier($handle: String!) {
+  productByIdentifier(identifier: { handle: $handle }) {
+    id
+    handle
+  }
+}

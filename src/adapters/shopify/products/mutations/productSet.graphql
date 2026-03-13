@@ -1,0 +1,19 @@
+mutation ProductSet($input: ProductSetInput!) {
+  productSet(input: $input, synchronous: true) {
+    product {
+      id
+      handle
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+
+query ProductByIdentifier($handle: String!) {
+  productByIdentifier(identifier: { handle: $handle }) {
+    id
+    handle
+  }
+}

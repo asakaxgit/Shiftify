@@ -19,42 +19,54 @@ const OWNER_TYPES = [
   MetafieldOwnerType.Shop,
 ] as const
 
+const METAFIELD_DEFINITIONS_PAGE_SIZE = 250
+
 export const exportMetafieldDefinitions = async (options?: {
   dryRun?: boolean
+  limit?: number
 }): Promise<void> => {
   const dryRun = options?.dryRun ?? false
+  const limit = options?.limit
   logger.info(
     dryRun ? 'Exporting metafield definitions (dry-run)...' : 'Exporting metafield definitions...',
   )
   const shop = config.SOURCE_SHOP
   const all: MetafieldDefinition[] = []
 
-  for (const ownerType of OWNER_TYPES) {
+  outer: for (const ownerType of OWNER_TYPES) {
     let cursor: string | undefined
     do {
-      const data = await shopifyClient.graphql(
-        shop,
-        ExportMetafieldDefinitionsDocument,
-        cursor ? { ownerType, cursor } : { ownerType },
-      )
+      const pageSize =
+        limit != null
+          ? Math.min(METAFIELD_DEFINITIONS_PAGE_SIZE, limit - all.length)
+          : METAFIELD_DEFINITIONS_PAGE_SIZE
+      if (pageSize <= 0) break outer
+      const vars = {
+        ownerType,
+        first: pageSize,
+        ...(cursor ? { cursor } : {}),
+      }
+      const data = await shopifyClient.graphql(shop, ExportMetafieldDefinitionsDocument, vars)
       const { nodes, pageInfo } = data.metafieldDefinitions
-      all.push(
-        ...nodes.map((n) => ({
-          name: n.name,
-          namespace: n.namespace,
-          key: n.key,
-          description: n.description ?? null,
-          type: n.type.name,
-          ownerType: n.ownerType,
-          pinnedPosition: n.pinnedPosition ?? null,
-          validations: n.validations.map((v) => ({
-            name: v.name,
-            type: v.type,
-            value: v.value ?? null,
-          })),
-        })),
-      )
-      cursor = pageInfo.hasNextPage && pageInfo.endCursor ? pageInfo.endCursor : undefined
+      const mapped = nodes.map((n) => ({
+        name: n.name,
+        namespace: n.namespace,
+        key: n.key,
+        description: n.description ?? null,
+        type: n.type.name,
+        ownerType: n.ownerType,
+        pinnedPosition: null,
+        validations: [],
+      }))
+      const toAdd =
+        limit != null && all.length + mapped.length > limit
+          ? mapped.slice(0, limit - all.length)
+          : mapped
+      all.push(...toAdd)
+      cursor =
+        pageInfo.hasNextPage && pageInfo.endCursor && (limit == null || all.length < limit)
+          ? pageInfo.endCursor
+          : undefined
     } while (cursor)
   }
 

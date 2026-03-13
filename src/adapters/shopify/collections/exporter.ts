@@ -6,6 +6,8 @@ import { config } from '#utils/config'
 import { logger } from '#utils/logger'
 import { shopifyClient } from '#utils/shopifyClient'
 
+const COLLECTION_PRODUCTS_PAGE_SIZE = 250
+
 const fetchManualProductHandles = async (shop: string, collectionId: string): Promise<string[]> => {
   const handles: string[] = []
   let cursor: string | undefined
@@ -13,6 +15,7 @@ const fetchManualProductHandles = async (shop: string, collectionId: string): Pr
   do {
     const data = await shopifyClient.graphql(shop, CollectionProductsDocument, {
       id: collectionId,
+      first: COLLECTION_PRODUCTS_PAGE_SIZE,
       ...(cursor ? { cursor } : {}),
     })
     const conn = data.collection?.products
@@ -25,8 +28,16 @@ const fetchManualProductHandles = async (shop: string, collectionId: string): Pr
   return handles
 }
 
-export const exportCollections = async (options?: { dryRun?: boolean }): Promise<void> => {
+const COLLECTIONS_PAGE_SIZE = 250
+
+export const exportCollections = async (options?: {
+  dryRun?: boolean
+  limit?: number
+  query?: string | null
+}): Promise<void> => {
   const dryRun = options?.dryRun ?? false
+  const limit = options?.limit
+  const query = options?.query?.trim() || null
   logger.info(dryRun ? 'Exporting collections (dry-run)...' : 'Exporting collections...')
   const shop = config.SOURCE_SHOP
   const all: Collection[] = []
@@ -34,14 +45,25 @@ export const exportCollections = async (options?: { dryRun?: boolean }): Promise
 
   // 1. Fetch all collection metadata
   do {
-    const data = await shopifyClient.graphql(
-      shop,
-      ExportCollectionsDocument,
-      cursor ? { cursor } : {},
-    )
+    const pageSize =
+      limit != null ? Math.min(COLLECTIONS_PAGE_SIZE, limit - all.length) : COLLECTIONS_PAGE_SIZE
+    if (pageSize <= 0) break
+    const vars: { first: number; cursor?: string; query?: string } = {
+      first: pageSize,
+      ...(cursor ? { cursor } : {}),
+      ...(query ? { query } : {}),
+    }
+    const data = await shopifyClient.graphql(shop, ExportCollectionsDocument, vars)
     const { nodes, pageInfo } = data.collections
-    all.push(...(nodes as Collection[]))
-    cursor = pageInfo.hasNextPage && pageInfo.endCursor ? pageInfo.endCursor : undefined
+    const toAdd =
+      limit != null && all.length + nodes.length > limit
+        ? nodes.slice(0, limit - all.length)
+        : nodes
+    all.push(...(toAdd as Collection[]))
+    cursor =
+      pageInfo.hasNextPage && pageInfo.endCursor && (limit == null || all.length < limit)
+        ? pageInfo.endCursor
+        : undefined
     logger.info(`  fetched ${all.length} collections so far`)
   } while (cursor)
 

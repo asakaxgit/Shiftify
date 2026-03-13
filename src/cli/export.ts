@@ -3,12 +3,14 @@ import { exportCollections } from '#adapters/shopify/collections/exporter'
 import { exportMetafieldDefinitions } from '#adapters/shopify/metafieldDefinitions/exporter'
 import { exportProducts } from '#adapters/shopify/products/exporter'
 import { logger } from '#utils/logger'
-import { getDryRun, parseEntities } from './parseEntities'
+import { getDryRun, getExportLimit, getExportQuery, parseEntities } from './parseEntities'
 import { getCandidates, getSource } from './sourceManager'
 
 const main = async () => {
   const requested = parseEntities()
   const dryRun = getDryRun()
+  const limit = getExportLimit()
+  const query = getExportQuery()
   const source = getSource()
   const candidates = await getCandidates(source)
   const entities = requested.filter((e) => candidates[e])
@@ -32,9 +34,10 @@ const main = async () => {
       dryRun,
     })
   } else {
-    if (entities.includes('metafield-definitions')) await exportMetafieldDefinitions({ dryRun })
-    if (entities.includes('products')) await exportProducts({ dryRun })
-    if (entities.includes('collections')) await exportCollections({ dryRun })
+    const exportOptions = { dryRun, limit: limit ?? undefined, query: query ?? undefined }
+    if (entities.includes('metafield-definitions')) await exportMetafieldDefinitions(exportOptions)
+    if (entities.includes('products')) await exportProducts(exportOptions)
+    if (entities.includes('collections')) await exportCollections(exportOptions)
   }
 
   logger.success(dryRun ? 'Export complete (dry-run)' : 'Export complete')

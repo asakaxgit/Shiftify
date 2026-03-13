@@ -1,9 +1,9 @@
 import path from 'node:path'
 import fs from 'fs-extra'
 import { ExportProductsDocument, type ExportProductsQuery } from '#gql/graphql'
-import { normalizeMetafieldValue } from '#utils/normalizeMetafieldValue'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
+import { normalizeMetafieldValue } from '#utils/normalizeMetafieldValue'
 import { shopifyClient } from '#utils/shopifyClient'
 
 type ProductNode = ExportProductsQuery['products']['nodes'][number]
@@ -16,37 +16,57 @@ const normalizeMetafieldNodes = (nodes: MetafieldNode[] | null | undefined): Met
 }
 
 const normalizeProductNode = (node: ProductNode): ProductNode => {
-  const metafields =
-    node.metafields?.nodes?.length ?
-      { nodes: normalizeMetafieldNodes(node.metafields.nodes) }
+  const metafields = node.metafields?.nodes?.length
+    ? { nodes: normalizeMetafieldNodes(node.metafields.nodes) }
     : node.metafields
-  const variants =
-    node.variants?.nodes?.length
-      ? {
-          nodes: node.variants.nodes.map((v) => ({
-            ...v,
-            metafields:
-              v.metafields?.nodes?.length ?
-                { nodes: normalizeMetafieldNodes(v.metafields.nodes) }
-              : v.metafields,
-          })),
-        }
-      : node.variants
+  const variants = node.variants?.nodes?.length
+    ? {
+        nodes: node.variants.nodes.map((v) => ({
+          ...v,
+          metafields: v.metafields?.nodes?.length
+            ? { nodes: normalizeMetafieldNodes(v.metafields.nodes) }
+            : v.metafields,
+        })),
+      }
+    : node.variants
   return { ...node, metafields, variants }
 }
 
-export const exportProducts = async (options?: { dryRun?: boolean }): Promise<void> => {
+const PRODUCTS_PAGE_SIZE = 100
+
+export const exportProducts = async (options?: {
+  dryRun?: boolean
+  limit?: number
+  query?: string | null
+}): Promise<void> => {
   const dryRun = options?.dryRun ?? false
+  const limit = options?.limit
+  const query = options?.query?.trim() || null
   logger.info(dryRun ? 'Exporting products (dry-run)...' : 'Exporting products...')
   const shop = config.SOURCE_SHOP
   const all: ProductNode[] = []
   let cursor: string | undefined
 
   do {
-    const data = await shopifyClient.graphql(shop, ExportProductsDocument, cursor ? { cursor } : {})
+    const pageSize =
+      limit != null ? Math.min(PRODUCTS_PAGE_SIZE, limit - all.length) : PRODUCTS_PAGE_SIZE
+    if (pageSize <= 0) break
+    const vars: { first: number; cursor?: string; query?: string } = {
+      first: pageSize,
+      ...(cursor ? { cursor } : {}),
+      ...(query ? { query } : {}),
+    }
+    const data = await shopifyClient.graphql(shop, ExportProductsDocument, vars)
     const { nodes, pageInfo } = data.products
-    all.push(...nodes)
-    cursor = pageInfo.hasNextPage && pageInfo.endCursor ? pageInfo.endCursor : undefined
+    const toAdd =
+      limit != null && all.length + nodes.length > limit
+        ? nodes.slice(0, limit - all.length)
+        : nodes
+    all.push(...toAdd)
+    cursor =
+      pageInfo.hasNextPage && pageInfo.endCursor && (limit == null || all.length < limit)
+        ? pageInfo.endCursor
+        : undefined
     logger.info(`  fetched ${all.length} products so far`)
   } while (cursor)
 

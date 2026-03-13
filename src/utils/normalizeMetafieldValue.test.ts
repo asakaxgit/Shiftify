@@ -4,11 +4,15 @@ import { normalizeMetafieldValue } from './normalizeMetafieldValue'
 describe('normalizeMetafieldValue', () => {
   describe('date_time', () => {
     it('returns already-normalized value unchanged', () => {
-      expect(normalizeMetafieldValue('date_time', '2024-01-15T10:30:00')).toBe('2024-01-15T10:30:00')
+      expect(normalizeMetafieldValue('date_time', '2024-01-15T10:30:00')).toBe(
+        '2024-01-15T10:30:00',
+      )
     })
 
     it('normalizes UTC Z suffix', () => {
-      expect(normalizeMetafieldValue('date_time', '2024-01-15T10:30:00Z')).toBe('2024-01-15T10:30:00')
+      expect(normalizeMetafieldValue('date_time', '2024-01-15T10:30:00Z')).toBe(
+        '2024-01-15T10:30:00',
+      )
     })
 
     it('normalizes +00:00 offset', () => {

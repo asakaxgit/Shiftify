@@ -4,15 +4,24 @@ export type SourceType = 'shopify' | 'matrixify-xlsx'
 
 export const config = {
   SOURCE_SHOP: process.env.SOURCE_SHOP ?? 'your-source.myshopify.com',
-  SOURCE_ACCESS_TOKEN: process.env.SOURCE_ACCESS_TOKEN ?? '',
+  SOURCE_ACCESS_TOKEN: (process.env.SOURCE_ACCESS_TOKEN ?? '').trim(),
   DEST_SHOP: process.env.DEST_SHOP ?? 'your-dest.myshopify.com',
-  DEST_ACCESS_TOKEN: process.env.DEST_ACCESS_TOKEN ?? '',
+  DEST_ACCESS_TOKEN: (process.env.DEST_ACCESS_TOKEN ?? '').trim(),
+  SHOPIFY_CLIENT_ID: process.env.SHOPIFY_CLIENT_ID ?? '',
+  SHOPIFY_CLIENT_SECRET: process.env.SHOPIFY_CLIENT_SECRET ?? '',
   SOURCE_TYPE: (process.env.SOURCE_TYPE ?? 'shopify') as SourceType,
   SOURCE_XLSX_PATH: process.env.SOURCE_XLSX_PATH ?? '',
   API_VERSION: process.env.API_VERSION ?? '2026-01',
   SHOPIFY_PLAN: process.env.SHOPIFY_PLAN ?? 'plus',
   BATCH_SIZE: Number(process.env.BATCH_SIZE ?? 250),
   CONCURRENCY: Number(process.env.CONCURRENCY ?? 10),
+  EXPORT_LIMIT: process.env.EXPORT_LIMIT ? Number(process.env.EXPORT_LIMIT) : null,
+  EXPORT_QUERY: (process.env.EXPORT_QUERY ?? '').trim() || null,
   DATA_DIR: process.env.DATA_DIR ?? './data',
+  EXPORT_XLSX_PATH: process.env.EXPORT_XLSX_PATH ?? '',
   MAPS_DIR: process.env.MAPS_DIR ?? './maps',
+  /** When 'all', publish imported collections to every sales channel; otherwise only to Online Store. */
+  COLLECTION_PUBLISH_CHANNELS: (process.env.COLLECTION_PUBLISH_CHANNELS ?? '').trim().toLowerCase(),
+  SHOPIFY_OAUTH_REDIRECT_HOST: process.env.SHOPIFY_OAUTH_REDIRECT_HOST ?? 'localhost',
+  SHOPIFY_OAUTH_REDIRECT_PORT: Number(process.env.SHOPIFY_OAUTH_REDIRECT_PORT ?? 3456),
 }

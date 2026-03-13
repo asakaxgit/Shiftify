@@ -1,0 +1,8 @@
+query ExportPublications($first: Int!) {
+  publications(first: $first) {
+    nodes {
+      id
+      name
+    }
+  }
+}

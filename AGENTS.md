@@ -8,12 +8,16 @@ TypeScript CLI for migrating Shopify store data (products, collections, metafiel
 node --version                 # must be 18+  (.node-version = v24.13.0)
 npm run export                 # export from source → data/
 npm run import                 # import from data/ to destination store
+npm run auth                   # run OAuth flow to get access tokens
 npm run export -- --only products --only collections --only metafield-definitions
 npm run export -- --skip collections    # inverse of --only; cannot combine with --only
 npm run import -- --only metafield-definitions
 npm run import -- --override  # upsert by handle (update existing products on "handle already taken")
 npm run export -- --dry-run   # or -n: run reads, log what would be written, do not write files
+npm run export -- --limit 50  # or -l: export only the first N items per entity (Shopify source only)
+npm run export -- --query "status:active"  # or -q: filter via Shopify search syntax (products/collections; Shopify source only)
 npm run import -- --dry-run   # or -n: read data/, log what would be created, no API mutations or file writes
+npm run export-to-xlsx        # data/*.json → XLSX; --only products | --only collections (default: both); --dry-run; --output path
 npm run test                   # vitest unit tests
 npm run test:integration       # live integration tests (requires .env.test.integration)
 npm run codegen                # regenerate src/gql/ from .graphql files
@@ -31,17 +35,22 @@ Adapters live under `src/adapters/` by system: each adapter handles source and/o
 src/
 ├── adapters/
 │   ├── shopify/            # source (GraphQL export) + destination (GraphQL import)
-│   │   ├── products/       # exporter.{ts,graphql,test.ts} + importer.{ts,graphql,test.ts}
-│   │   ├── collections/    # exporter + importer
-│   │   └── metafieldDefinitions/  # exporter + importer
-│   └── matrixify/          # source only: Matrixify XLSX → data/*.json normalizer
-│       ├── index.ts        # normalizeFromXlsx
+│   │   ├── products/       # exporter + importer; queries/ + mutations/ for .graphql ops
+│   │   ├── collections/    # exporter + importer; queries/ + mutations/ for .graphql ops
+│   │   └── metafieldDefinitions/  # exporter + importer; queries/ + mutations/ for .graphql ops
+│   ├── xlsx/                # generic XLSX read/write (readWorkbook, getSheetAsRows, createWorkbook, appendSheet, writeWorkbook)
+│   └── matrixify/           # Matrixify format: uses xlsx for I/O; normalizeFromXlsx, productsToRows, collectionsToRows, writeToXlsx
+│       ├── index.ts        # normalizeFromXlsx, writeToXlsx
 │       ├── manager.ts      # getCandidates() = which sheets exist (used by CLI)
 │       ├── products.ts     # Products sheet → products.json
 │       ├── collections.ts  # Smart/Custom Collections → collections.json
-│       └── metafieldDefinitions.ts  # infer defs from Metafield:/Variant Metafield: or Label (owner.metafields.ns.key) headers
+│       ├── productsToXlsx.ts   # Product[] → rows (Matrixify columns)
+│       ├── collectionsToXlsx.ts # Collection[] → smart/custom rows
+│       ├── writeToXlsx.ts  # products + collections → single XLSX file
+│       └── metafieldDefinitions.ts  # infer defs from sheet headers
 ├── cli/
 │   ├── export.ts           # entry: npm run export
+│   ├── exportToXlsx.ts     # entry: npm run export-to-xlsx
 │   ├── import.ts           # entry: npm run import
 │   ├── parseEntities.ts    # --only / --skip → entity list
 │   └── sourceManager.ts    # getSource() + getCandidates(source) → only run for candidates
@@ -76,7 +85,7 @@ codegen.ts              # graphql-codegen config (Shopify public schema proxy)
 - **`type` over `interface`** — always use `type Foo = { ... }`, never `interface Foo { ... }`
 - **No type casts** — `value as SomeType` and `value!` are banned (`noExplicitAny` + `noNonNullAssertion` in Biome); `as const` is fine
 - **Strict TypeScript** — `strict: true`; use type predicates (`(x): x is T =>`) instead of casts
-- **GraphQL operations** live in co-located `.graphql` files; run `npm run codegen` after changing them
+- **GraphQL operations** live in adapter `queries/` and `mutations/` subdirs (one operation per `.graphql` file); run `npm run codegen` after changing them
 
 ## Documentation Sync Rule
 
@@ -126,7 +135,7 @@ The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manag
 
 **When source is Shopify** (`SOURCE_TYPE=shopify`):
 
-1. `exportMetafieldDefinitions` → `data/metafield-definitions.json` (all owner types)
+1. `exportMetafieldDefinitions` → `data/metafield-definitions.json` (all owner types). The export query does **not** request `pinnedPosition` or `validations` because the Admin API often returns "Access denied" for those fields (no OAuth scope grants them); exported definitions have `pinnedPosition: null` and `validations: []`.
 2. `exportProducts` → `data/products.json` (GraphQL from SOURCE_SHOP; includes product and variant metafields)
 3. `exportCollections` → `data/collections.json` (metadata + ruleSet; manual collections include `productHandles[]`)
 
@@ -137,11 +146,13 @@ The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manag
 **Import** (same for both source types):
 
 4. `importMetafieldDefinitions` → creates definitions on destination (skips on `userErrors`, e.g. already exists)
-5. `importProducts` → creates products on destination (including product and variant metafields), writes `maps/product-id-map.json`
-6. `importCollections` → loads map, creates collections, resolves manual membership via handle→GID lookup
+5. `importProducts` → creates products on destination (including product and variant metafields, and product images via source URLs in `ProductSetInput.files`), writes `maps/product-id-map.json`
+6. `importCollections` → loads map, creates collections, resolves manual membership via handle→GID lookup, then publishes each created collection to sales channel(s): **default = Online Store only**; set `COLLECTION_PUBLISH_CHANNELS=all` to publish to every channel.
 
 **Import order matters:** metafield-definitions → products → collections.
 The CLI enforces this order automatically when all entities are imported together.
+
+**Limit and query** (`--limit` / `-l`, `--query` / `-q`): When exporting from Shopify, `--limit N` caps each entity to the first N items; `--query "..."` filters products and collections using [Shopify search syntax](https://shopify.dev/docs/api/usage/search-syntax) (e.g. `title:*sale*`, `status:active`, `product_type:Shirt`). The filter is passed to the GraphQL API (server-side). Env equivalents: `EXPORT_LIMIT`, `EXPORT_QUERY`.
 
 **Dry-run** (`--dry-run` or `-n`): Export still runs all reads (GraphQL or XLSX) and logs what would be written; no files are written. Import reads `data/` and the product map if present, logs what would be created; no GraphQL mutations or file writes. Use for preview only.
 
@@ -156,6 +167,8 @@ SOURCE_SHOP=your-source.myshopify.com
 SOURCE_ACCESS_TOKEN=shpat_xxx
 DEST_SHOP=your-dest.myshopify.com
 DEST_ACCESS_TOKEN=shpat_xxx
+SHOPIFY_CLIENT_ID=your_app_client_id
+SHOPIFY_CLIENT_SECRET=your_app_client_secret
 SOURCE_TYPE=shopify              # shopify | matrixify-xlsx
 # When SOURCE_TYPE=matrixify-xlsx, path to XLSX (or leave empty to use a file in DATA_DIR):
 # SOURCE_XLSX_PATH=/path/to/Export.xlsx
@@ -163,9 +176,33 @@ API_VERSION=2026-01
 SHOPIFY_PLAN=plus                # plus | standard  (affects bucket size: 2000 | 1000)
 BATCH_SIZE=250
 CONCURRENCY=10
+# Optional: cap export to first N items per entity (Shopify source); overridable by --limit
+# EXPORT_LIMIT=100
+# Optional: filter products/collections via Shopify search syntax (e.g. title:*sale*, status:active); overridable by --query
+# EXPORT_QUERY=status:active
 DATA_DIR=./data
+# Optional: output path for npm run export-to-xlsx (default: DATA_DIR/export.xlsx)
+# EXPORT_XLSX_PATH=./data/export.xlsx
 MAPS_DIR=./maps
+# Optional: when importing collections, which channel(s) to publish to. Omit or leave empty = Online Store only; set to "all" to publish to every sales channel.
+# COLLECTION_PUBLISH_CHANNELS=all
 ```
+
+To obtain `SOURCE_ACCESS_TOKEN` / `DEST_ACCESS_TOKEN` via OAuth instead of legacy custom-app tokens:
+
+- In the Shopify Partner Dashboard app settings, set **Application URL** to the same host as the callback (default: `http://localhost:3456`). Add **Allowed redirection URL(s)** entry: `http://localhost:3456/shopify/oauth/callback`. Shopify requires the redirect URI host to match the Application URL host; if you use a custom `SHOPIFY_OAUTH_REDIRECT_HOST` (e.g. `127.0.0.1`), set Application URL to that same host and port.
+- Set `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET` from that app in your `.env`.
+- Run `npm run auth`:
+  - `npm run auth` (both SOURCE_SHOP and DEST_SHOP),
+  - or `npm run auth -- --source` / `npm run auth -- --dest` to target just one.
+- The command opens a browser for each shop, walks through Shopify’s OAuth grant screen, and then prints a line you can paste into `.env`:
+
+  - For source: `SOURCE_ACCESS_TOKEN=...`
+  - For destination: `DEST_ACCESS_TOKEN=...`
+
+Tokens are requested as **offline** Admin access tokens; they do not expire and can be reused for subsequent Shiftify runs.
+
+**"Access denied for productSet" on import:** The destination shop needs (1) the app to have the `write_products` scope (included in `npm run auth`), and (2) the **staff user** who authorized the app must have permission to create products. Re-run `npm run auth -- --dest` to re-authorize the destination; ensure you log in as a user with **Settings → Users and permissions → [user] → Products → Create products** (or Full permissions). If using a custom app token from the admin, ensure the app has **Write products** in its API access.
 
 ## Integration Tests
 

@@ -4,7 +4,10 @@ import { resolveXlsxPath } from './manager'
 import { exportMetafieldDefinitionsFromMatrixifyXlsx } from './metafieldDefinitions'
 import { exportProductsFromMatrixifyXlsx } from './products'
 
+export { collectionsToRows } from './collectionsToXlsx'
+export { productsToRows } from './productsToXlsx'
 export { resolveXlsxPath } from './manager'
+export { type ExportToXlsxEntity, writeToXlsx } from './writeToXlsx'
 
 export const normalizeFromXlsx = async (options: {
   products?: boolean

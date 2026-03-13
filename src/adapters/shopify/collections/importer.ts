@@ -1,10 +1,30 @@
 import path from 'node:path'
 import fs from 'fs-extra'
-import { CollectionAddProductsDocument, CollectionCreateDocument } from '#gql/graphql'
+import {
+  CollectionAddProductsDocument,
+  CollectionCreateDocument,
+  ExportPublicationsDocument,
+  PublishablePublishDocument,
+} from '#gql/graphql'
 import type { Collection } from '#types/shopify'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
 import { shopifyClient } from '#utils/shopifyClient'
+
+const ONLINE_STORE_NAME = 'Online Store'
+
+/** Resolve publication IDs to publish collections to (Online Store only, or all). */
+const getPublicationIdsToPublish = async (shop: string): Promise<string[]> => {
+  const result = await shopifyClient.graphql(shop, ExportPublicationsDocument, { first: 100 })
+  const nodes = result.publications?.nodes ?? []
+  if (nodes.length === 0) return []
+  const useAll = config.COLLECTION_PUBLISH_CHANNELS === 'all'
+  if (useAll) return nodes.map((p) => p.id)
+  const onlineStore = nodes.find(
+    (p) => p.name?.trim().toLowerCase() === ONLINE_STORE_NAME.toLowerCase(),
+  )
+  return onlineStore ? [onlineStore.id] : []
+}
 
 const chunk = <T>(arr: T[], size: number): T[][] => {
   const out: T[][] = []
@@ -79,6 +99,13 @@ export const importCollections = async (options?: { dryRun?: boolean }): Promise
     return
   }
 
+  const publicationIds = await getPublicationIdsToPublish(shop)
+  if (publicationIds.length === 0) {
+    logger.warn(
+      'No publication(s) to publish to (default: Online Store). Collections will be created but not visible on any channel.',
+    )
+  }
+
   let done = 0
   let errors = 0
 
@@ -134,6 +161,23 @@ export const importCollections = async (options?: { dryRun?: boolean }): Promise
         }
         if (productIds.length > 0) {
           await addProducts(shop, created.id, productIds)
+        }
+      }
+
+      if (created && publicationIds.length > 0) {
+        const pubResult = await shopifyClient.graphql(shop, PublishablePublishDocument, {
+          id: created.id,
+          input: publicationIds.map((publicationId) => ({ publicationId })),
+        })
+        const pubErrors = pubResult.publishablePublish?.userErrors ?? []
+        if (pubErrors.length > 0) {
+          const msg = pubErrors
+            .map(
+              (e: { field?: string[] | null; message: string }) =>
+                `${(e.field ?? []).join('.')}: ${e.message}`,
+            )
+            .join('; ')
+          logger.warn(`  [warn] ${col.handle}: publish to channel(s): ${msg}`)
         }
       }
 
