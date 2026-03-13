@@ -100,4 +100,11 @@ describe('exportProducts', () => {
     expect(graphql).toHaveBeenCalledTimes(1)
     expect(outputJson).not.toHaveBeenCalled()
   })
+
+  it('dry-run: fetches data but does not write outputJson', async () => {
+    graphql.mockResolvedValueOnce(page([productA], false))
+    await exportProducts({ dryRun: true })
+    expect(graphql).toHaveBeenCalledTimes(1)
+    expect(outputJson).not.toHaveBeenCalled()
+  })
 })

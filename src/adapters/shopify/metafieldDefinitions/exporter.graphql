@@ -1,0 +1,18 @@
+query ExportMetafieldDefinitions($ownerType: MetafieldOwnerType!, $first: Int!, $cursor: String) {
+  metafieldDefinitions(ownerType: $ownerType, first: $first, after: $cursor) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      name
+      namespace
+      key
+      description
+      type {
+        name
+      }
+      ownerType
+    }
+  }
+}

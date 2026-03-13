@@ -1,0 +1,28 @@
+query ExportCollections($first: Int!, $cursor: String, $query: String) {
+  collections(first: $first, after: $cursor, query: $query) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      id
+      title
+      handle
+      descriptionHtml
+      sortOrder
+      templateSuffix
+      image {
+        url
+        altText
+      }
+      ruleSet {
+        appliedDisjunctively
+        rules {
+          column
+          relation
+          condition
+        }
+      }
+    }
+  }
+}

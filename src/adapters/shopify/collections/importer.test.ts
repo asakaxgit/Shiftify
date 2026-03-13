@@ -64,9 +64,7 @@ describe('importCollections', () => {
   it('creates a smart collection with its ruleSet', async () => {
     readJson.mockResolvedValue([smartCol])
     pathExists.mockResolvedValue(false)
-    graphql
-      .mockResolvedValueOnce({ publications: { nodes: [] } })
-      .mockResolvedValueOnce(createOk())
+    graphql.mockResolvedValueOnce({ publications: { nodes: [] } }).mockResolvedValueOnce(createOk())
     await importCollections()
     expect(graphql).toHaveBeenCalledTimes(2)
     expect(graphql.mock.calls[1][2].input.ruleSet).toEqual(smartCol.ruleSet)
@@ -148,5 +146,12 @@ describe('importCollections', () => {
       id: 'gid://shopify/Collection/99',
       input: [{ publicationId: onlineStoreId }],
     })
+  })
+
+  it('dry-run: reads data but does not call graphql', async () => {
+    readJson.mockResolvedValue([smartCol])
+    pathExists.mockResolvedValue(false)
+    await importCollections({ dryRun: true })
+    expect(graphql).not.toHaveBeenCalled()
   })
 })
