@@ -2,12 +2,13 @@ import path from 'node:path'
 import fs from 'fs-extra'
 import pLimit from 'p-limit'
 import {
+  FileContentType,
   ProductByIdentifierDocument,
   ProductSetDocument,
   type ProductSetInput,
   type WeightUnit,
 } from '#gql/graphql'
-import type { Product, ProductMetafield, ProductVariant } from '#types/shopify'
+import type { Product, ProductImage, ProductMetafield, ProductVariant } from '#types/shopify'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
 import { shopifyClient } from '#utils/shopifyClient'
@@ -19,6 +20,13 @@ const getMetafields = (owner: {
   const raw = owner.metafields
   if (!raw) return []
   return Array.isArray(raw) ? raw : (raw.nodes ?? [])
+}
+
+/** Normalize product images from GraphQL shape (images.nodes). */
+const getProductImages = (product: Product): ProductImage[] => {
+  const raw = product.images?.nodes
+  if (!raw?.length) return []
+  return raw
 }
 
 const toMetafieldInput = (m: ProductMetafield) => ({
@@ -51,6 +59,15 @@ export const buildVariantInput = (variant: ProductVariant) => {
 
 const buildProductInput = (product: Product): ProductSetInput => {
   const productMetafields = getMetafields(product)
+  const images = getProductImages(product).filter((img) => img.url?.trim())
+  const files =
+    images.length > 0
+      ? images.map((img) => ({
+          originalSource: img.url,
+          ...(img.altText?.trim() ? { alt: img.altText } : {}),
+          contentType: FileContentType.Image,
+        }))
+      : undefined
   return {
     title: product.title,
     handle: product.handle,
@@ -64,6 +81,7 @@ const buildProductInput = (product: Product): ProductSetInput => {
       values: o.values.map((v) => ({ name: v })),
     })),
     variants: product.variants.nodes.map((v) => buildVariantInput(v)),
+    ...(files ? { files } : {}),
     ...(productMetafields.length > 0
       ? { metafields: productMetafields.map(toMetafieldInput) }
       : {}),

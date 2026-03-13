@@ -146,7 +146,7 @@ The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manag
 **Import** (same for both source types):
 
 4. `importMetafieldDefinitions` → creates definitions on destination (skips on `userErrors`, e.g. already exists)
-5. `importProducts` → creates products on destination (including product and variant metafields), writes `maps/product-id-map.json`
+5. `importProducts` → creates products on destination (including product and variant metafields, and product images via source URLs in `ProductSetInput.files`), writes `maps/product-id-map.json`
 6. `importCollections` → loads map, creates collections, resolves manual membership via handle→GID lookup
 
 **Import order matters:** metafield-definitions → products → collections.
