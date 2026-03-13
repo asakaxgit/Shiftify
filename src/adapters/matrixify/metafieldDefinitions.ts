@@ -1,6 +1,6 @@
 import path from 'node:path'
 import fs from 'fs-extra'
-import * as XLSX from 'xlsx'
+import { type Workbook, getSheetAsRows, readWorkbook } from '#adapters/xlsx'
 import type { MetafieldDefinition } from '#types/shopify'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
@@ -33,15 +33,8 @@ const isBuiltinNamespace = (namespace: string): boolean =>
 
 const humanName = (namespace: string, key: string): string => key || `${namespace}_field`
 
-const getHeadersFromSheet = (sheet: XLSX.WorkSheet): string[] => {
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-    defval: '',
-    header: 1,
-  })
-  if (rows.length === 0) return []
-  const first = rows[0]
-  return Array.isArray(first) ? (first as string[]) : Object.keys(first as object)
-}
+const getHeadersFromRows = (rows: Record<string, unknown>[]): string[] =>
+  rows.length > 0 ? Object.keys(rows[0]) : []
 
 type InferredDef = {
   namespace: string
@@ -102,7 +95,7 @@ const parseHeadersAlt = (headers: string[]): InferredDef[] => {
 }
 
 /** Exported for unit tests. Infers metafield definitions from column headers in Products and Collections sheets. */
-export const inferFromWorkbook = (workbook: XLSX.WorkBook): MetafieldDefinition[] => {
+export const inferFromWorkbook = (workbook: Workbook): MetafieldDefinition[] => {
   const seen = new Set<string>()
   const result: MetafieldDefinition[] = []
 
@@ -123,24 +116,24 @@ export const inferFromWorkbook = (workbook: XLSX.WorkBook): MetafieldDefinition[
     })
   }
 
-  const productsSheet = workbook.Sheets.Products ?? workbook.Sheets.Product
-  if (productsSheet) {
-    const headers = getHeadersFromSheet(productsSheet)
+  const productRows = getSheetAsRows(workbook, ['Products', 'Product'])
+  if (productRows.length > 0) {
+    const headers = getHeadersFromRows(productRows as Record<string, unknown>[])
     for (const d of parseHeadersForOwner(headers, OWNER_PRODUCT)) add(d)
     for (const d of parseHeadersForOwner(headers, OWNER_PRODUCT_VARIANT)) add(d)
     for (const d of parseHeadersAlt(headers)) add(d)
   }
 
-  const smartSheet = workbook.Sheets['Smart Collections'] ?? workbook.Sheets['Smart Collection']
-  if (smartSheet) {
-    const headers = getHeadersFromSheet(smartSheet)
+  const smartRows = getSheetAsRows(workbook, ['Smart Collections', 'Smart Collection'])
+  if (smartRows.length > 0) {
+    const headers = getHeadersFromRows(smartRows as Record<string, unknown>[])
     for (const d of parseHeadersForOwner(headers, OWNER_COLLECTION)) add(d)
     for (const d of parseHeadersAlt(headers)) add(d)
   }
 
-  const customSheet = workbook.Sheets['Custom Collections'] ?? workbook.Sheets['Custom Collection']
-  if (customSheet) {
-    const headers = getHeadersFromSheet(customSheet)
+  const customRows = getSheetAsRows(workbook, ['Custom Collections', 'Custom Collection'])
+  if (customRows.length > 0) {
+    const headers = getHeadersFromRows(customRows as Record<string, unknown>[])
     for (const d of parseHeadersForOwner(headers, OWNER_COLLECTION)) add(d)
     for (const d of parseHeadersAlt(headers)) add(d)
   }
@@ -152,8 +145,7 @@ export const exportMetafieldDefinitionsFromMatrixifyXlsx = async (
   xlsxPath: string,
   options?: { dryRun?: boolean },
 ): Promise<void> => {
-  const buf = await fs.readFile(xlsxPath)
-  const workbook = XLSX.read(buf, { type: 'buffer' })
+  const workbook = await readWorkbook(xlsxPath)
   const definitions = inferFromWorkbook(workbook)
   const outPath = path.join(config.DATA_DIR, 'metafield-definitions.json')
   if (options?.dryRun) {

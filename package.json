@@ -8,6 +8,7 @@
   },
   "scripts": {
     "export": "tsx src/cli/export.ts",
+    "export-to-xlsx": "tsx src/cli/exportToXlsx.ts",
     "import": "tsx src/cli/import.ts",
     "auth": "tsx src/cli/auth.ts",
     "typecheck": "tsc --noEmit",

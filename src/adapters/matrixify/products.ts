@@ -1,6 +1,6 @@
 import path from 'node:path'
 import fs from 'fs-extra'
-import * as XLSX from 'xlsx'
+import { getSheetAsRows, hasSheet, readWorkbook } from '#adapters/xlsx'
 import type {
   Product,
   ProductImage,
@@ -245,18 +245,12 @@ const rowsToProduct = (
   }
 }
 
-const parseProductsSheet = (workbook: XLSX.WorkBook): Product[] => {
-  const sheet = workbook.Sheets.Products ?? workbook.Sheets.Product
-  if (!sheet) {
-    throw new Error('XLSX has no "Products" or "Product" sheet')
-  }
-  const rows = XLSX.utils.sheet_to_json<MatrixifyRow>(sheet, { defval: '' })
+const parseProductsSheet = (
+  rows: MatrixifyRow[],
+  productMetafieldCols: MetafieldCol[],
+  variantMetafieldCols: MetafieldCol[],
+): Product[] => {
   if (rows.length === 0) return []
-
-  const headers = rows.length > 0 ? Object.keys(rows[0]) : []
-  const allMetafieldCols = getMetafieldColumns(headers)
-  const productMetafieldCols = allMetafieldCols.filter((c) => c.owner === 'product')
-  const variantMetafieldCols = allMetafieldCols.filter((c) => c.owner === 'variant')
 
   const groups: MatrixifyRow[][] = []
   let currentGroup: MatrixifyRow[] = []
@@ -277,9 +271,16 @@ const parseProductsSheet = (workbook: XLSX.WorkBook): Product[] => {
 }
 
 export const normalizeProductsFromXlsx = async (xlsxPath: string): Promise<Product[]> => {
-  const buf = await fs.readFile(xlsxPath)
-  const workbook = XLSX.read(buf, { type: 'buffer' })
-  const products = parseProductsSheet(workbook)
+  const workbook = await readWorkbook(xlsxPath)
+  if (!hasSheet(workbook, ['Products', 'Product'])) {
+    throw new Error('XLSX has no "Products" or "Product" sheet')
+  }
+  const rows = getSheetAsRows(workbook, ['Products', 'Product'])
+  const headers = rows.length > 0 ? Object.keys(rows[0]) : []
+  const allMetafieldCols = getMetafieldColumns(headers)
+  const productMetafieldCols = allMetafieldCols.filter((c) => c.owner === 'product')
+  const variantMetafieldCols = allMetafieldCols.filter((c) => c.owner === 'variant')
+  const products = parseProductsSheet(rows, productMetafieldCols, variantMetafieldCols)
   logger.info(`Parsed ${products.length} products from Matrixify XLSX`)
   return products
 }

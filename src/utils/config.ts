@@ -18,6 +18,7 @@ export const config = {
   EXPORT_LIMIT: process.env.EXPORT_LIMIT ? Number(process.env.EXPORT_LIMIT) : null,
   EXPORT_QUERY: (process.env.EXPORT_QUERY ?? '').trim() || null,
   DATA_DIR: process.env.DATA_DIR ?? './data',
+  EXPORT_XLSX_PATH: process.env.EXPORT_XLSX_PATH ?? '',
   MAPS_DIR: process.env.MAPS_DIR ?? './maps',
   SHOPIFY_OAUTH_REDIRECT_HOST: process.env.SHOPIFY_OAUTH_REDIRECT_HOST ?? 'localhost',
   SHOPIFY_OAUTH_REDIRECT_PORT: Number(process.env.SHOPIFY_OAUTH_REDIRECT_PORT ?? 3456),

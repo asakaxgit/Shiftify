@@ -13,12 +13,6 @@ query ExportMetafieldDefinitions($ownerType: MetafieldOwnerType!, $first: Int!, 
         name
       }
       ownerType
-      pinnedPosition
-      validations {
-        name
-        type
-        value
-      }
     }
   }
 }

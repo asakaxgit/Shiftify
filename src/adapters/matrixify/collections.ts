@@ -1,6 +1,6 @@
 import path from 'node:path'
 import fs from 'fs-extra'
-import * as XLSX from 'xlsx'
+import { getSheetAsRows, readWorkbook } from '#adapters/xlsx'
 import type { Collection, CollectionRuleSet } from '#types/shopify'
 import { config } from '#utils/config'
 import { logger } from '#utils/logger'
@@ -10,10 +10,7 @@ type MatrixifyRow = Record<string, string | number | boolean | undefined>
 const str = (v: string | number | boolean | undefined): string =>
   v === undefined || v === null ? '' : String(v).trim()
 
-const parseSmartCollections = (workbook: XLSX.WorkBook): Collection[] => {
-  const sheet = workbook.Sheets['Smart Collections'] ?? workbook.Sheets['Smart Collection']
-  if (!sheet) return []
-  const rows = XLSX.utils.sheet_to_json<MatrixifyRow>(sheet, { defval: '' })
+const parseSmartCollections = (rows: MatrixifyRow[]): Collection[] => {
   if (rows.length === 0) return []
 
   const collections: Collection[] = []
@@ -71,10 +68,7 @@ const parseSmartCollections = (workbook: XLSX.WorkBook): Collection[] => {
   return collections
 }
 
-const parseCustomCollections = (workbook: XLSX.WorkBook): Collection[] => {
-  const sheet = workbook.Sheets['Custom Collections'] ?? workbook.Sheets['Custom Collection']
-  if (!sheet) return []
-  const rows = XLSX.utils.sheet_to_json<MatrixifyRow>(sheet, { defval: '' })
+const parseCustomCollections = (rows: MatrixifyRow[]): Collection[] => {
   if (rows.length === 0) return []
 
   const byHandle = new Map<string, { first: MatrixifyRow; handles: string[] }>()
@@ -107,11 +101,12 @@ const parseCustomCollections = (workbook: XLSX.WorkBook): Collection[] => {
   }))
 }
 
-export const normalizeCollectionsFromXlsx = (xlsxPath: string): Collection[] => {
-  const buf = fs.readFileSync(xlsxPath)
-  const workbook = XLSX.read(buf, { type: 'buffer' })
-  const smart = parseSmartCollections(workbook)
-  const custom = parseCustomCollections(workbook)
+export const normalizeCollectionsFromXlsx = async (xlsxPath: string): Promise<Collection[]> => {
+  const workbook = await readWorkbook(xlsxPath)
+  const smartRows = getSheetAsRows(workbook, ['Smart Collections', 'Smart Collection'])
+  const customRows = getSheetAsRows(workbook, ['Custom Collections', 'Custom Collection'])
+  const smart = parseSmartCollections(smartRows)
+  const custom = parseCustomCollections(customRows)
   return [...smart, ...custom]
 }
 
@@ -119,7 +114,7 @@ export const exportCollectionsFromMatrixifyXlsx = async (
   xlsxPath: string,
   options?: { dryRun?: boolean },
 ): Promise<void> => {
-  const collections = normalizeCollectionsFromXlsx(xlsxPath)
+  const collections = await normalizeCollectionsFromXlsx(xlsxPath)
   logger.info(`Parsed ${collections.length} collections from Matrixify XLSX`)
   const outPath = path.join(config.DATA_DIR, 'collections.json')
   if (options?.dryRun) {

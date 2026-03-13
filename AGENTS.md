@@ -17,6 +17,7 @@ npm run export -- --dry-run   # or -n: run reads, log what would be written, do 
 npm run export -- --limit 50  # or -l: export only the first N items per entity (Shopify source only)
 npm run export -- --query "status:active"  # or -q: filter via Shopify search syntax (products/collections; Shopify source only)
 npm run import -- --dry-run   # or -n: read data/, log what would be created, no API mutations or file writes
+npm run export-to-xlsx        # data/*.json → XLSX; --only products | --only collections (default: both); --dry-run; --output path
 npm run test                   # vitest unit tests
 npm run test:integration       # live integration tests (requires .env.test.integration)
 npm run codegen                # regenerate src/gql/ from .graphql files
@@ -37,14 +38,19 @@ src/
 │   │   ├── products/       # exporter.{ts,graphql,test.ts} + importer.{ts,graphql,test.ts}
 │   │   ├── collections/    # exporter + importer
 │   │   └── metafieldDefinitions/  # exporter + importer
-│   └── matrixify/          # source only: Matrixify XLSX → data/*.json normalizer
-│       ├── index.ts        # normalizeFromXlsx
+│   ├── xlsx/                # generic XLSX read/write (readWorkbook, getSheetAsRows, createWorkbook, appendSheet, writeWorkbook)
+│   └── matrixify/           # Matrixify format: uses xlsx for I/O; normalizeFromXlsx, productsToRows, collectionsToRows, writeToXlsx
+│       ├── index.ts        # normalizeFromXlsx, writeToXlsx
 │       ├── manager.ts      # getCandidates() = which sheets exist (used by CLI)
 │       ├── products.ts     # Products sheet → products.json
 │       ├── collections.ts  # Smart/Custom Collections → collections.json
-│       └── metafieldDefinitions.ts  # infer defs from Metafield:/Variant Metafield: or Label (owner.metafields.ns.key) headers
+│       ├── productsToXlsx.ts   # Product[] → rows (Matrixify columns)
+│       ├── collectionsToXlsx.ts # Collection[] → smart/custom rows
+│       ├── writeToXlsx.ts  # products + collections → single XLSX file
+│       └── metafieldDefinitions.ts  # infer defs from sheet headers
 ├── cli/
 │   ├── export.ts           # entry: npm run export
+│   ├── exportToXlsx.ts     # entry: npm run export-to-xlsx
 │   ├── import.ts           # entry: npm run import
 │   ├── parseEntities.ts    # --only / --skip → entity list
 │   └── sourceManager.ts    # getSource() + getCandidates(source) → only run for candidates
@@ -129,7 +135,7 @@ The CLI determines the **source** from `SOURCE_TYPE` and asks the **source manag
 
 **When source is Shopify** (`SOURCE_TYPE=shopify`):
 
-1. `exportMetafieldDefinitions` → `data/metafield-definitions.json` (all owner types)
+1. `exportMetafieldDefinitions` → `data/metafield-definitions.json` (all owner types). The export query does **not** request `pinnedPosition` or `validations` because the Admin API often returns "Access denied" for those fields (no OAuth scope grants them); exported definitions have `pinnedPosition: null` and `validations: []`.
 2. `exportProducts` → `data/products.json` (GraphQL from SOURCE_SHOP; includes product and variant metafields)
 3. `exportCollections` → `data/collections.json` (metadata + ruleSet; manual collections include `productHandles[]`)
 
@@ -175,6 +181,8 @@ CONCURRENCY=10
 # Optional: filter products/collections via Shopify search syntax (e.g. title:*sale*, status:active); overridable by --query
 # EXPORT_QUERY=status:active
 DATA_DIR=./data
+# Optional: output path for npm run export-to-xlsx (default: DATA_DIR/export.xlsx)
+# EXPORT_XLSX_PATH=./data/export.xlsx
 MAPS_DIR=./maps
 ```
 
@@ -191,6 +199,8 @@ To obtain `SOURCE_ACCESS_TOKEN` / `DEST_ACCESS_TOKEN` via OAuth instead of legac
   - For destination: `DEST_ACCESS_TOKEN=...`
 
 Tokens are requested as **offline** Admin access tokens; they do not expire and can be reused for subsequent Shiftify runs.
+
+**"Access denied for productSet" on import:** The destination shop needs (1) the app to have the `write_products` scope (included in `npm run auth`), and (2) the **staff user** who authorized the app must have permission to create products. Re-run `npm run auth -- --dest` to re-authorize the destination; ensure you log in as a user with **Settings → Users and permissions → [user] → Products → Create products** (or Full permissions). If using a custom app token from the admin, ensure the app has **Write products** in its API access.
 
 ## Integration Tests
 

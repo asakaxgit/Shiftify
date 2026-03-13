@@ -55,12 +55,8 @@ export const exportMetafieldDefinitions = async (options?: {
         description: n.description ?? null,
         type: n.type.name,
         ownerType: n.ownerType,
-        pinnedPosition: n.pinnedPosition ?? null,
-        validations: n.validations.map((v) => ({
-          name: v.name,
-          type: v.type,
-          value: v.value ?? null,
-        })),
+        pinnedPosition: null,
+        validations: [],
       }))
       const toAdd =
         limit != null && all.length + mapped.length > limit
