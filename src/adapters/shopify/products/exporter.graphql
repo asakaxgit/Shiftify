@@ -17,6 +17,14 @@ query ExportProducts($cursor: String) {
         name
         values
       }
+      metafields(first: 100) {
+        nodes {
+          namespace
+          key
+          type
+          value
+        }
+      }
       variants(first: 100) {
         nodes {
           id
@@ -40,6 +48,14 @@ query ExportProducts($cursor: String) {
             value
           }
           position
+          metafields(first: 50) {
+            nodes {
+              namespace
+              key
+              type
+              value
+            }
+          }
         }
       }
       images(first: 20) {

@@ -1,5 +1,7 @@
 // ─── Product ─────────────────────────────────────────────────────────────────
 
+export type ProductMetafield = { namespace: string; key: string; type: string; value: string }
+
 export interface ProductImage {
   id: string
   url: string
@@ -22,6 +24,7 @@ export interface ProductVariant {
   }
   selectedOptions: Array<{ name: string; value: string }>
   position: number
+  metafields?: ProductMetafield[]
 }
 
 export interface ProductOption {
@@ -41,6 +44,7 @@ export interface Product {
   options: ProductOption[]
   variants: { nodes: ProductVariant[] }
   images: { nodes: ProductImage[] }
+  metafields?: ProductMetafield[]
 }
 
 // ─── MetafieldDefinition ──────────────────────────────────────────────────────

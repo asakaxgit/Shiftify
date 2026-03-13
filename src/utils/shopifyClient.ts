@@ -38,8 +38,8 @@ export type BucketState = {
 const buckets = new Map<string, BucketState>()
 
 const getToken = (shop: string): string => {
-  if (shop === config.PROD_SHOP) return config.PROD_ACCESS_TOKEN
-  if (shop === config.DEV_SHOP) return config.DEV_ACCESS_TOKEN
+  if (shop === config.SOURCE_SHOP) return config.SOURCE_ACCESS_TOKEN
+  if (shop === config.DEST_SHOP) return config.DEST_ACCESS_TOKEN
   throw new Error(`Unknown shop: ${shop}`)
 }
 

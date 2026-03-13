@@ -1,20 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Product, ProductVariant } from '../../types/shopify'
+import type { Product, ProductVariant } from '#types/shopify'
 
-vi.mock('../../utils/config.js', () => ({
-  config: { DEV_SHOP: 'dev.myshopify.com', CONCURRENCY: 5, DATA_DIR: './data', MAPS_DIR: './maps' },
+vi.mock('#utils/config', () => ({
+  config: {
+    DEST_SHOP: 'dev.myshopify.com',
+    CONCURRENCY: 5,
+    DATA_DIR: './data',
+    MAPS_DIR: './maps',
+  },
 }))
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('#utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), success: vi.fn() },
 }))
 vi.mock('p-limit', () => ({ default: () => (fn: () => unknown) => fn() }))
 
 const graphql = vi.hoisted(() => vi.fn())
-vi.mock('../../utils/shopifyClient.js', () => ({ shopifyClient: { graphql } }))
+vi.mock('#utils/shopifyClient', () => ({ shopifyClient: { graphql } }))
 
 const readJson = vi.hoisted(() => vi.fn())
 const outputJson = vi.hoisted(() => vi.fn())
-vi.mock('fs-extra', () => ({ readJson, outputJson }))
+vi.mock('fs-extra', () => ({ default: { readJson, outputJson } }))
 
 import { buildVariantInput, importProducts } from './importer'
 
@@ -53,6 +58,9 @@ const setOk = (handle: string, id = 'gid://shopify/Product/99') => ({
 })
 const setError = (message: string) => ({
   productSet: { product: null, userErrors: [{ field: ['handle'], message }] },
+})
+const lookupOk = (handle: string, id = 'gid://shopify/Product/123') => ({
+  productByIdentifier: { id, handle },
 })
 
 // ─── buildVariantInput ───────────────────────────────────────────────────────
@@ -139,6 +147,20 @@ describe('importProducts', () => {
     expect(Object.keys(outputJson.mock.calls[0][1])).toHaveLength(0)
   })
 
+  it('override: retries productSet with existing id when handle is taken', async () => {
+    readJson.mockResolvedValue([product])
+    graphql
+      .mockResolvedValueOnce(setError('Handle already taken'))
+      .mockResolvedValueOnce(lookupOk('test-product', 'gid://shopify/Product/123'))
+      .mockResolvedValueOnce(setOk('test-product', 'gid://shopify/Product/123'))
+    await importProducts({ override: true })
+    expect(outputJson).toHaveBeenCalledWith(
+      expect.stringContaining('product-id-map.json'),
+      { 'test-product': 'gid://shopify/Product/123' },
+      { spaces: 2 },
+    )
+  })
+
   it('catches a thrown graphql error and excludes the product from the map', async () => {
     readJson.mockResolvedValue([product])
     graphql.mockRejectedValue(new Error('Network error'))
@@ -157,5 +179,12 @@ describe('importProducts', () => {
       'test-product': 'gid://shopify/Product/1',
       'product-b': 'gid://shopify/Product/2',
     })
+  })
+
+  it('dry-run: reads data but does not call graphql or outputJson', async () => {
+    readJson.mockResolvedValue([product])
+    await importProducts({ dryRun: true })
+    expect(graphql).not.toHaveBeenCalled()
+    expect(outputJson).not.toHaveBeenCalled()
   })
 })

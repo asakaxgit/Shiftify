@@ -1,19 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { MetafieldOwnerType } from '../../gql/graphql'
-import type { MetafieldDefinition } from '../../types/shopify'
+import { MetafieldOwnerType } from '#gql/graphql'
+import type { MetafieldDefinition } from '#types/shopify'
 
-vi.mock('../../utils/config.js', () => ({
-  config: { PROD_SHOP: 'prod.myshopify.com', DATA_DIR: './data' },
+vi.mock('#utils/config', () => ({
+  config: { SOURCE_SHOP: 'prod.myshopify.com', DATA_DIR: './data' },
 }))
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('#utils/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), success: vi.fn() },
 }))
 
 const graphql = vi.hoisted(() => vi.fn())
-vi.mock('../../utils/shopifyClient.js', () => ({ shopifyClient: { graphql } }))
+vi.mock('#utils/shopifyClient', () => ({ shopifyClient: { graphql } }))
 
 const outputJson = vi.hoisted(() => vi.fn())
-vi.mock('fs-extra', () => ({ outputJson }))
+vi.mock('fs-extra', () => ({ default: { outputJson } }))
 
 import { exportMetafieldDefinitions } from './exporter'
 
@@ -127,5 +127,12 @@ describe('exportMetafieldDefinitions', () => {
     await exportMetafieldDefinitions()
     const written = outputJson.mock.calls[0][1] as MetafieldDefinition[]
     expect(written[0].validations).toEqual([{ name: 'max', type: 'number_integer', value: '100' }])
+  })
+
+  it('dry-run: queries all owner types but does not write outputJson', async () => {
+    graphql.mockResolvedValue(page([], false))
+    await exportMetafieldDefinitions({ dryRun: true })
+    expect(graphql).toHaveBeenCalledTimes(OWNER_TYPE_COUNT)
+    expect(outputJson).not.toHaveBeenCalled()
   })
 })

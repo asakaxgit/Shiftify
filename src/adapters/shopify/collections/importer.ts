@@ -1,16 +1,26 @@
 import path from 'node:path'
-import { pathExists, readJson } from 'fs-extra'
-import { CollectionAddProductsDocument, CollectionCreateDocument } from '../../gql/graphql'
-import type { Collection } from '../../types/shopify'
-import { config } from '../../utils/config'
-import { logger } from '../../utils/logger'
-import { shopifyClient } from '../../utils/shopifyClient'
+import fs from 'fs-extra'
+import { CollectionAddProductsDocument, CollectionCreateDocument } from '#gql/graphql'
+import type { Collection } from '#types/shopify'
+import { config } from '#utils/config'
+import { logger } from '#utils/logger'
+import { shopifyClient } from '#utils/shopifyClient'
 
 const chunk = <T>(arr: T[], size: number): T[][] => {
   const out: T[][] = []
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size))
   return out
 }
+
+/** Normalize display enum (e.g. "Manual", "Vendor") to GraphQL enum (MANUAL, VENDOR). */
+const toGraphQLEnum = (s: string): string => s.toUpperCase().replace(/\s+/g, '_')
+
+/** Map API/display sortOrder variants to CollectionSortOrder enum. */
+const SORT_ORDER_ALIASES: Record<string, string> = {
+  CREATED_DESCENDING: 'CREATED_DESC',
+  ALPHABET: 'ALPHA_ASC',
+}
+const toSortOrder = (s: string): string => SORT_ORDER_ALIASES[toGraphQLEnum(s)] ?? toGraphQLEnum(s)
 
 const addProducts = async (
   shop: string,
@@ -37,20 +47,36 @@ const addProducts = async (
   }
 }
 
-export const importCollections = async (): Promise<void> => {
-  const shop = config.DEV_SHOP
+export const importCollections = async (options?: { dryRun?: boolean }): Promise<void> => {
+  const dryRun = options?.dryRun ?? false
+  const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'collections.json')
   const mapPath = path.join(config.MAPS_DIR, 'product-id-map.json')
 
-  const collections: Collection[] = await readJson(dataPath)
-  logger.info(`Importing ${collections.length} collections to ${shop}...`)
+  const collections: Collection[] = await fs.readJson(dataPath)
+  logger.info(
+    dryRun
+      ? `Would import ${collections.length} collections to ${shop} (dry-run)...`
+      : `Importing ${collections.length} collections to ${shop}...`,
+  )
 
   // Load handle→id map written by importProducts
   let handleToId: Record<string, string> = {}
-  if (await pathExists(mapPath)) {
-    handleToId = await readJson(mapPath)
-  } else {
+  if (await fs.pathExists(mapPath)) {
+    handleToId = await fs.readJson(mapPath)
+  } else if (!dryRun) {
     logger.warn('product-id-map.json not found — manual collection membership will be skipped')
+  } else {
+    logger.warn('product-id-map.json not found — would skip manual collection product membership')
+  }
+
+  if (dryRun) {
+    const manualCount = collections.filter((c) => !c.ruleSet && c.productHandles?.length).length
+    if (manualCount && !Object.keys(handleToId).length) {
+      logger.warn(`  ${manualCount} manual collection(s) would have no products (map missing)`)
+    }
+    logger.success(`Would create ${collections.length} collections`)
+    return
   }
 
   let done = 0
@@ -62,12 +88,23 @@ export const importCollections = async (): Promise<void> => {
         title: col.title,
         handle: col.handle,
         descriptionHtml: col.descriptionHtml,
-        sortOrder: col.sortOrder,
+        sortOrder: toSortOrder(col.sortOrder),
         ...(col.templateSuffix ? { templateSuffix: col.templateSuffix } : {}),
         ...(col.image
           ? { image: { src: col.image.url, altText: col.image.altText ?? undefined } }
           : {}),
-        ...(col.ruleSet ? { ruleSet: col.ruleSet } : {}),
+        ...(col.ruleSet
+          ? {
+              ruleSet: {
+                appliedDisjunctively: col.ruleSet.appliedDisjunctively,
+                rules: col.ruleSet.rules.map((r) => ({
+                  column: toGraphQLEnum(r.column),
+                  relation: toGraphQLEnum(r.relation),
+                  condition: r.condition,
+                })),
+              },
+            }
+          : {}),
       }
 
       const result = await shopifyClient.graphql(shop, CollectionCreateDocument, { input })

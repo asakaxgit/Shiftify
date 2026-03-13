@@ -1,11 +1,15 @@
 import 'dotenv/config'
 
+export type SourceType = 'shopify' | 'matrixify-xlsx'
+
 export const config = {
-  PROD_SHOP: process.env.PROD_SHOP ?? 'your-prod.myshopify.com',
-  PROD_ACCESS_TOKEN: process.env.PROD_ACCESS_TOKEN ?? '',
-  DEV_SHOP: process.env.DEV_SHOP ?? 'your-dev.myshopify.com',
-  DEV_ACCESS_TOKEN: process.env.DEV_ACCESS_TOKEN ?? '',
-  API_VERSION: process.env.API_VERSION ?? '2024-01',
+  SOURCE_SHOP: process.env.SOURCE_SHOP ?? 'your-source.myshopify.com',
+  SOURCE_ACCESS_TOKEN: process.env.SOURCE_ACCESS_TOKEN ?? '',
+  DEST_SHOP: process.env.DEST_SHOP ?? 'your-dest.myshopify.com',
+  DEST_ACCESS_TOKEN: process.env.DEST_ACCESS_TOKEN ?? '',
+  SOURCE_TYPE: (process.env.SOURCE_TYPE ?? 'shopify') as SourceType,
+  SOURCE_XLSX_PATH: process.env.SOURCE_XLSX_PATH ?? '',
+  API_VERSION: process.env.API_VERSION ?? '2026-01',
   SHOPIFY_PLAN: process.env.SHOPIFY_PLAN ?? 'plus',
   BATCH_SIZE: Number(process.env.BATCH_SIZE ?? 250),
   CONCURRENCY: Number(process.env.CONCURRENCY ?? 10),

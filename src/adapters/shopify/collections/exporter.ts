@@ -1,10 +1,10 @@
 import path from 'node:path'
-import { outputJson } from 'fs-extra'
-import { CollectionProductsDocument, ExportCollectionsDocument } from '../../gql/graphql'
-import type { Collection } from '../../types/shopify'
-import { config } from '../../utils/config'
-import { logger } from '../../utils/logger'
-import { shopifyClient } from '../../utils/shopifyClient'
+import fs from 'fs-extra'
+import { CollectionProductsDocument, ExportCollectionsDocument } from '#gql/graphql'
+import type { Collection } from '#types/shopify'
+import { config } from '#utils/config'
+import { logger } from '#utils/logger'
+import { shopifyClient } from '#utils/shopifyClient'
 
 const fetchManualProductHandles = async (shop: string, collectionId: string): Promise<string[]> => {
   const handles: string[] = []
@@ -25,9 +25,10 @@ const fetchManualProductHandles = async (shop: string, collectionId: string): Pr
   return handles
 }
 
-export const exportCollections = async (): Promise<void> => {
-  logger.info('Exporting collections...')
-  const shop = config.PROD_SHOP
+export const exportCollections = async (options?: { dryRun?: boolean }): Promise<void> => {
+  const dryRun = options?.dryRun ?? false
+  logger.info(dryRun ? 'Exporting collections (dry-run)...' : 'Exporting collections...')
+  const shop = config.SOURCE_SHOP
   const all: Collection[] = []
   let cursor: string | undefined
 
@@ -55,6 +56,10 @@ export const exportCollections = async (): Promise<void> => {
   }
 
   const outPath = path.join(config.DATA_DIR, 'collections.json')
-  await outputJson(outPath, all, { spaces: 2 })
+  if (dryRun) {
+    logger.success(`Would write ${all.length} collections to ${outPath}`)
+    return
+  }
+  await fs.outputJson(outPath, all, { spaces: 2 })
   logger.success(`Exported ${all.length} collections → ${outPath}`)
 }

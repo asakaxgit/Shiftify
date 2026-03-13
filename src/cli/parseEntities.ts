@@ -1,5 +1,5 @@
 import minimist from 'minimist'
-import { logger } from '../utils/logger'
+import { logger } from '#utils/logger'
 
 export type Entity = 'products' | 'collections' | 'metafield-definitions'
 export const VALID_ENTITIES: readonly Entity[] = [
@@ -9,8 +9,20 @@ export const VALID_ENTITIES: readonly Entity[] = [
 ]
 const VALID_SET = new Set<string>(VALID_ENTITIES)
 
+const getArgv = () => minimist(process.argv.slice(2))
+
+export const getDryRun = (): boolean => {
+  const argv = getArgv()
+  return argv['dry-run'] === true || argv.n === true
+}
+
+export const getOverride = (): boolean => {
+  const argv = getArgv()
+  return argv.override === true
+}
+
 export const parseEntities = (): Entity[] => {
-  const argv = minimist(process.argv.slice(2))
+  const argv = getArgv()
 
   const rawOnly: string | string[] = argv.only ?? argv.o ?? []
   const only = [rawOnly].flat().filter(Boolean)

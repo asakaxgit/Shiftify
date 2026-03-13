@@ -1,17 +1,36 @@
 import path from 'node:path'
-import { readJson } from 'fs-extra'
+import fs from 'fs-extra'
 import pLimit from 'p-limit'
-import { MetafieldDefinitionCreateDocument } from '../../gql/graphql'
-import type { MetafieldDefinition } from '../../types/shopify'
-import { config } from '../../utils/config'
-import { logger } from '../../utils/logger'
-import { shopifyClient } from '../../utils/shopifyClient'
+import { MetafieldDefinitionCreateDocument, MetafieldOwnerType } from '#gql/graphql'
+import type { MetafieldDefinition } from '#types/shopify'
+import { config } from '#utils/config'
+import { logger } from '#utils/logger'
+import { shopifyClient } from '#utils/shopifyClient'
 
-export const importMetafieldDefinitions = async (): Promise<void> => {
-  const shop = config.DEV_SHOP
+const VALID_OWNER_TYPES: readonly string[] = Object.values(MetafieldOwnerType)
+const isMetafieldOwnerType = (s: string): s is MetafieldOwnerType => VALID_OWNER_TYPES.includes(s)
+
+export const importMetafieldDefinitions = async (options?: {
+  dryRun?: boolean
+}): Promise<void> => {
+  const dryRun = options?.dryRun ?? false
+  const shop = config.DEST_SHOP
   const dataPath = path.join(config.DATA_DIR, 'metafield-definitions.json')
-  const definitions: MetafieldDefinition[] = await readJson(dataPath)
-  logger.info(`Importing ${definitions.length} metafield definitions to ${shop}...`)
+  const definitions: MetafieldDefinition[] = await fs.readJson(dataPath)
+  logger.info(
+    dryRun
+      ? `Would import ${definitions.length} metafield definitions to ${shop} (dry-run)...`
+      : `Importing ${definitions.length} metafield definitions to ${shop}...`,
+  )
+
+  if (dryRun) {
+    const invalid = definitions.filter((d) => !isMetafieldOwnerType(d.ownerType))
+    if (invalid.length) {
+      logger.warn(`  ${invalid.length} definition(s) have invalid ownerType and would be skipped`)
+    }
+    logger.success(`Would create ${definitions.length} metafield definitions`)
+    return
+  }
 
   const limit = pLimit(config.CONCURRENCY)
   let done = 0
@@ -21,6 +40,13 @@ export const importMetafieldDefinitions = async (): Promise<void> => {
     definitions.map((def) =>
       limit(async () => {
         try {
+          if (!isMetafieldOwnerType(def.ownerType)) {
+            logger.warn(
+              `  [skip] invalid ownerType "${def.ownerType}" for ${def.namespace}.${def.key}`,
+            )
+            errors++
+            return
+          }
           const result = await shopifyClient.graphql(shop, MetafieldDefinitionCreateDocument, {
             definition: {
               name: def.name,
